@@ -52,7 +52,7 @@ users 1 ─── 1 room_members N ─── 1 rooms
                                  cleaning_records expense_shares
 ```
 
-room_departures는 rooms와 users를 참조하는 기록용 테이블이다.
+room_departures는 rooms와 users를 참조하는 기록용 테이블이다. notifications는 users와 rooms를 참조하며, 둘 중 하나가 삭제되면 함께 삭제된다.
 
 ## 5. 테이블 설명
 
@@ -132,6 +132,13 @@ room_departures는 rooms와 users를 참조하는 기록용 테이블이다.
 ### room_departures 방 퇴장 기록
 방번호, 나간 회원, 사유(LEFT 스스로 나감, KICKED 방장이 내보냄), 퇴장 시각. 방을 나가거나 내보내질 때 서버가 남긴다. 나간 사람이 결제하거나 분담한 지출은 방의 기록으로 남기 때문에, 지출 목록에서 그 사람이 나갔는지 추방됐는지를 보여주는 데 쓴다. 같은 사람이 다시 가입할 수 있어서 여러 행이 생길 수 있다.
 
+### notifications 앱 내부 알림
+받는 회원, 방, 종류(`ITEM_EXPIRY`, `CLEANING_DUE`, `SCHEDULE_START`, `EXPENSE_SHARE`, `EXPENSE_SETTLED`), 제목, 내용, 이동할 대상(`target_type`, `target_id`), 읽음 여부와 시각. 서버가 만들어 저장하고 앱이 조회한다.
+
+- **중복 방지:** `dedupe_key`가 있고 `(회원, dedupe_key)`가 UNIQUE라서 같은 알림은 한 번만 들어간다. 예를 들어 `ITEM_EXPIRY:12:2026-11-20:3`은 12번 물품의 유통기한 3일 전 알림이다.
+- **정리:** 알림 대상이 삭제되면 서버가 그 알림도 지운다. 방을 나가면 그 사람의 알림이 지워진다. 90일이 지난 알림은 서버가 매일 정리한다.
+- **검사 조건:** 읽음 여부와 읽은 시각이 서로 맞아야 하고, 이동 대상은 종류와 번호가 함께 있거나 함께 없어야 한다.
+
 ## 6. 삭제 규칙
 
 - 방을 삭제하면 그 방의 방 회원, 초대 코드, 물품, 일정, 청소, 지출, 분담이 함께 삭제된다.
@@ -152,6 +159,7 @@ room_departures는 rooms와 users를 참조하는 기록용 테이블이다.
 | 청소 완료·미룸·건너뜀 이력 | 그대로 둔다. |
 | 지출과 분담 기록 | 그대로 둔다. 방의 정산 기록이다. |
 | 퇴장 기록 | room_departures에 LEFT 또는 KICKED로 남긴다. |
+| 알림 | 나간 사람이 받은 알림은 삭제한다. 삭제되는 물품·일정을 가리키는 다른 사람의 알림도 삭제한다. |
 
 정산 규칙은 이렇다.
 

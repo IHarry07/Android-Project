@@ -73,7 +73,7 @@ async function makeRoom(memberCount = 3, capacity = 10) {
 
 async function clearTables() {
   await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const t of ['room_departures', 'expense_shares', 'expenses', 'cleaning_records', 'cleaning_tasks', 'schedules',
+  for (const t of ['notifications', 'room_departures', 'expense_shares', 'expenses', 'cleaning_records', 'cleaning_tasks', 'schedules',
     'items', 'room_invitations', 'room_members', 'rooms', 'users']) {
     await pool.query(`TRUNCATE TABLE ${t}`);
   }

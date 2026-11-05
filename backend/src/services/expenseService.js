@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const { loadRoom, withRoomMember, currentMemberIds, memberLabels } = require('./roomAccess');
+const notifications = require('./notificationService');
 
 /**
  * 지출 규칙
@@ -117,6 +118,9 @@ async function createExpense(userId, roomId, body) {
       [roomId, userId, body.title, body.amount, body.expenseDate],
     );
     await insertShares(conn, result.insertId, userId, list);
+    await notifications.notifyExpenseShares(conn, {
+      roomId, expenseId: result.insertId, title: body.title, payerId: userId, shares: list,
+    });
     return loadOne(conn, roomId, result.insertId);
   });
 }
@@ -178,6 +182,9 @@ async function updateExpense(userId, roomId, expenseId, body) {
       await conn.query('DELETE FROM expense_shares WHERE expense_id = ?', [expenseId]);
       await insertShares(conn, expenseId, userId, list);
       await conn.query('UPDATE expenses SET amount = ? WHERE expense_id = ?', [amount, expenseId]);
+      await notifications.notifyExpenseShares(conn, {
+        roomId, expenseId, title: body.title ?? expense.title, payerId: userId, shares: list,
+      });
     }
     if (body.title !== undefined) await conn.query('UPDATE expenses SET title = ? WHERE expense_id = ?', [body.title, expenseId]);
     if (body.expenseDate !== undefined) await conn.query('UPDATE expenses SET expense_date = ? WHERE expense_id = ?', [body.expenseDate, expenseId]);
@@ -190,6 +197,7 @@ async function deleteExpense(userId, roomId, expenseId) {
     const expense = await findExpense(conn, roomId, expenseId, { lock: true });
     assertPayer(expense, userId);
     await assertNothingSettled(conn, expenseId);
+    await notifications.deleteByTarget(conn, 'EXPENSE', expenseId);
     await conn.query('DELETE FROM expenses WHERE expense_id = ?', [expenseId]);
   });
 }
@@ -208,6 +216,15 @@ async function settleShare(userId, roomId, expenseId, targetUserId, isSettled) {
       [isSettled ? 1 : 0, expenseId, targetUserId],
     );
     if (result.affectedRows === 0) throw new AppError(404, 'SHARE_NOT_FOUND', '해당 분담 내역을 찾을 수 없습니다.');
+
+    // 아직 방에 있는 사람에게만 알린다.
+    const members = await currentMemberIds(conn, roomId);
+    if (members.has(targetUserId)) {
+      const [share] = await conn.query('SELECT share_amount FROM expense_shares WHERE expense_id = ? AND user_id = ?', [expenseId, targetUserId]);
+      await notifications.notifySettlement(conn, {
+        roomId, expenseId, title: expense.title, amount: share[0].share_amount, debtorId: targetUserId, isSettled,
+      });
+    }
     return loadOne(conn, roomId, expenseId);
   });
 }

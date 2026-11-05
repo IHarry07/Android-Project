@@ -311,3 +311,40 @@ CREATE TABLE IF NOT EXISTS room_departures (
   CONSTRAINT fk_room_departures_user
     FOREIGN KEY (user_id) REFERENCES users (user_id)
 ) ENGINE=InnoDB COMMENT='방 퇴장 기록';
+
+-- ---------------------------------------------------------------------
+-- 12. notifications: 앱 내부 알림
+--     서버가 만들어 저장하고 앱이 조회·읽음 처리한다. (푸시 알림은 아직 없다.)
+--     dedupe_key: 같은 알림이 두 번 만들어지지 않게 하는 키. 같은 회원에게 같은 키는 한 번만 들어간다.
+--     예) ITEM_EXPIRY:12:2026-11-20:3  (12번 물품, 유통기한 2026-11-20, 3일 전 알림)
+--     target_type, target_id: 알림을 눌렀을 때 이동할 대상. 대상이 삭제되면 서버가 알림도 함께 지운다.
+--     오래된 알림(90일 지남)은 서버가 매일 정리한다.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS notifications (
+  notification_id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '알림번호',
+  user_id         BIGINT UNSIGNED NOT NULL COMMENT '받는 회원',
+  room_id         BIGINT UNSIGNED NOT NULL COMMENT '알림이 생긴 방',
+  type            ENUM('ITEM_EXPIRY','CLEANING_DUE','SCHEDULE_START','EXPENSE_SHARE','EXPENSE_SETTLED') NOT NULL COMMENT '알림 종류',
+  title           VARCHAR(100)    NOT NULL COMMENT '제목',
+  body            VARCHAR(255)    NOT NULL COMMENT '내용',
+  target_type     ENUM('ITEM','SCHEDULE','CLEANING_TASK','EXPENSE') NULL COMMENT '이동할 대상 종류',
+  target_id       BIGINT UNSIGNED NULL COMMENT '이동할 대상 번호',
+  dedupe_key      VARCHAR(120)    NOT NULL COMMENT '중복 방지 키',
+  is_read         TINYINT(1)      NOT NULL DEFAULT 0 COMMENT '읽음 여부',
+  read_at         DATETIME        NULL COMMENT '읽은 시각',
+  created_at      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (notification_id),
+  UNIQUE KEY uq_notifications_dedupe (user_id, dedupe_key),
+  KEY idx_notifications_user_read (user_id, is_read, notification_id),
+  KEY idx_notifications_target (target_type, target_id),
+  KEY idx_notifications_room_user (room_id, user_id),
+  KEY idx_notifications_created (created_at),
+  CONSTRAINT fk_notifications_user
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_notifications_room
+    FOREIGN KEY (room_id) REFERENCES rooms (room_id) ON DELETE CASCADE,
+  CONSTRAINT ck_notifications_read
+    CHECK ((is_read = 1) = (read_at IS NOT NULL)),
+  CONSTRAINT ck_notifications_target
+    CHECK ((target_type IS NULL) = (target_id IS NULL))
+) ENGINE=InnoDB COMMENT='앱 내부 알림';

@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const { loadRoom, withRoomMember } = require('./roomAccess');
+const notifications = require('./notificationService');
 
 /**
  * 물품 규칙
@@ -152,6 +153,7 @@ async function deleteItem(userId, roomId, itemId) {
   await withRoomMember(userId, roomId, async (conn) => {
     const item = await findItem(conn, roomId, itemId, { lock: true });
     assertCanModify(item, userId);
+    await notifications.deleteByTarget(conn, 'ITEM', itemId);
     await conn.query('DELETE FROM items WHERE item_id = ?', [itemId]);
   });
 }

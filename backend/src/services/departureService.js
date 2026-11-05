@@ -63,6 +63,20 @@ async function assertCanLeave(conn, roomId, userId, sharedItemsChoice) {
 }
 
 async function purgeMemberData(conn, { roomId, userId, ownerUserId, sharedItems, reason }) {
+  // 나간 사람이 받은 알림, 그리고 삭제될 물품·일정을 가리키는 알림을 먼저 지운다.
+  await conn.query('DELETE FROM notifications WHERE room_id = ? AND user_id = ?', [roomId, userId]);
+  const itemFilter = sharedItems === 'DELETE' ? '' : " AND i.ownership_type = 'PERSONAL'";
+  await conn.query(
+    `DELETE n FROM notifications n JOIN items i ON n.target_type = 'ITEM' AND n.target_id = i.item_id
+      WHERE i.room_id = ? AND i.created_by = ?${itemFilter}`,
+    [roomId, userId],
+  );
+  await conn.query(
+    `DELETE n FROM notifications n JOIN schedules s ON n.target_type = 'SCHEDULE' AND n.target_id = s.schedule_id
+      WHERE s.room_id = ? AND s.user_id = ?`,
+    [roomId, userId],
+  );
+
   await conn.query("DELETE FROM items WHERE room_id = ? AND created_by = ? AND ownership_type = 'PERSONAL'", [roomId, userId]);
   if (sharedItems === 'DELETE') {
     await conn.query("DELETE FROM items WHERE room_id = ? AND created_by = ? AND ownership_type = 'SHARED'", [roomId, userId]);

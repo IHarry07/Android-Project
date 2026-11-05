@@ -83,6 +83,13 @@ const idParam = z.object({
   scheduleId: positiveId.optional(),
   taskId: positiveId.optional(),
   expenseId: positiveId.optional(),
+  notificationId: positiveId.optional(),
+});
+
+const listNotifications = z.object({
+  filter: z.enum(['all', 'unread', 'read'], { error: 'filter는 all, unread, read 중 하나여야 합니다.' }).default('all'),
+  limit: z.coerce.number().int().min(1).max(100).default(30),
+  beforeId: z.coerce.number().int().positive().optional(),
 });
 
 const leaveQuery = z.object({
@@ -293,6 +300,7 @@ module.exports = {
     userId: z.number({ error: '새 방장의 회원번호가 필요합니다.' }).int().positive(),
   }),
   idParam,
+  listNotifications,
   leaveQuery,
   createItem, updateItem, adjustItem, listItems,
   createSchedule, updateSchedule, listSchedules,

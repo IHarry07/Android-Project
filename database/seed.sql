@@ -19,6 +19,7 @@
 USE roomade;
 
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE notifications;
 TRUNCATE TABLE room_departures;
 TRUNCATE TABLE expense_shares;
 TRUNCATE TABLE expenses;
@@ -141,5 +142,15 @@ INSERT INTO expense_shares (expense_id, user_id, share_amount, is_settled, settl
   (@exp_net,    @sena,  11000, 1, NOW()),
   (@exp_elec,   @minjun, 20000, 1, NOW()),
   (@exp_elec,   @daeun,  20000, 0, NULL);
+
+-- ---------------------------------------------------------------------
+-- 알림 (읽지 않은 알림과 읽은 알림을 하나씩 섞어 둔다)
+-- ---------------------------------------------------------------------
+SET @item_milk = (SELECT item_id FROM items WHERE room_id = @room301 AND name = '우유');
+
+INSERT INTO notifications (user_id, room_id, type, title, body, target_type, target_id, dedupe_key, is_read, read_at) VALUES
+  (@hana,  @room301, 'ITEM_EXPIRY',    '유통기한 3일 남았어요', '공용 ''우유''', 'ITEM', @item_milk, CONCAT('ITEM_EXPIRY:', @item_milk, ':seed:3'), 0, NULL),
+  (@doori, @room301, 'ITEM_EXPIRY',    '유통기한 3일 남았어요', '공용 ''우유''', 'ITEM', @item_milk, CONCAT('ITEM_EXPIRY:', @item_milk, ':seed:3'), 1, NOW()),
+  (@doori, @room301, 'EXPENSE_SHARE',  '새 분담금이 생겼어요',  '하나님이 ''휴지 구매'' 지출에서 4,000원을 분담하도록 지정했어요', 'EXPENSE', @exp_tissue, CONCAT('EXPENSE_SHARE:', @exp_tissue, ':', @doori), 0, NULL);
 
 COMMIT;

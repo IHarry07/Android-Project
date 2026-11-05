@@ -2,6 +2,7 @@ const { pool } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const { nextDueDate } = require('../utils/dates');
 const { loadRoom, withRoomMember, currentMemberIds, memberLabels } = require('./roomAccess');
+const notifications = require('./notificationService');
 
 /**
  * 청소 규칙
@@ -168,6 +169,7 @@ async function deleteTask(userId, roomId, taskId) {
       throw new AppError(403, 'NOT_ROOM_OWNER', '방장만 할 수 있는 작업입니다.');
     }
     await findTask(conn, roomId, taskId, { lock: true });
+    await notifications.deleteByTarget(conn, 'CLEANING_TASK', taskId);
     await conn.query('DELETE FROM cleaning_tasks WHERE task_id = ?', [taskId]);
   });
 }

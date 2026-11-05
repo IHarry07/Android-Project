@@ -1,6 +1,7 @@
 const env = require('./src/config/env');
 const { pool } = require('./src/config/db');
 const app = require('./src/app');
+const { startScheduler, stopScheduler } = require('./src/services/notificationJobs');
 
 async function main() {
   // 시작할 때 DB에 연결되는지 먼저 확인한다.
@@ -8,8 +9,10 @@ async function main() {
   const server = app.listen(env.port, () => {
     console.log(`룸메이드 서버 시작: http://localhost:${env.port} (DB: ${env.db.database})`);
   });
+  if (env.schedulerEnabled) startScheduler();
 
   const shutdown = () => {
+    stopScheduler();
     server.close(async () => {
       await pool.end();
       process.exit(0);

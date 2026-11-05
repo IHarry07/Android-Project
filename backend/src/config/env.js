@@ -36,4 +36,8 @@ module.exports = {
   keepTokenTtl: '30d',
   // 초대 코드 기본 유효 기간(일)
   inviteDefaultDays: 7,
+  // 하루 한 번 만드는 알림(유통기한, 청소 당번)을 이 시각(시) 이후에 만든다. DB 서버 시계 기준
+  notifyHour: 9,
+  // 알림 스케줄러를 끄려면 DISABLE_SCHEDULER=true (테스트에서는 항상 꺼진다)
+  schedulerEnabled: process.env.NODE_ENV !== 'test' && process.env.DISABLE_SCHEDULER !== 'true',
 };

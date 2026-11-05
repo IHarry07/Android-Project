@@ -1,6 +1,7 @@
 const { pool } = require('../config/db');
 const { AppError } = require('../utils/errors');
 const { loadRoom, withRoomMember } = require('./roomAccess');
+const notifications = require('./notificationService');
 
 /**
  * 일정 규칙
@@ -95,6 +96,7 @@ async function deleteSchedule(userId, roomId, scheduleId) {
   await withRoomMember(userId, roomId, async (conn, room) => {
     const current = await findSchedule(conn, roomId, scheduleId, { lock: true });
     assertCanModify(current, room, userId);
+    await notifications.deleteByTarget(conn, 'SCHEDULE', scheduleId);
     await conn.query('DELETE FROM schedules WHERE schedule_id = ?', [scheduleId]);
   });
 }
