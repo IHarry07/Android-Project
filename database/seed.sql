@@ -19,6 +19,7 @@
 USE roomade;
 
 SET FOREIGN_KEY_CHECKS = 0;
+TRUNCATE TABLE room_departures;
 TRUNCATE TABLE expense_shares;
 TRUNCATE TABLE expenses;
 TRUNCATE TABLE cleaning_records;
@@ -110,11 +111,11 @@ SET @task_bath301 = (SELECT task_id FROM cleaning_tasks WHERE room_id = @room301
 SET @task_recycle = (SELECT task_id FROM cleaning_tasks WHERE room_id = @room301 AND area_name = '분리수거');
 
 -- 청소 이력: 지난주 완료, 이번 주 미룸(오늘 -> 2일 뒤), 오늘 예정
-INSERT INTO cleaning_records (task_id, assignee_user_id, due_date, status, completed_at, postponed_to, memo) VALUES
-  (@task_bath301, @sena,  DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'DONE',      DATE_SUB(NOW(), INTERVAL 5 DAY), NULL, NULL),
-  (@task_bath301, @doori, CURDATE(),                           'POSTPONED', NULL, DATE_ADD(CURDATE(), INTERVAL 2 DAY), '시험 준비로 이틀 미룸'),
-  (@task_bath301, @doori, DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'SCHEDULED', NULL, NULL, NULL),
-  (@task_recycle, @sena,  CURDATE(),                           'SCHEDULED', NULL, NULL, NULL);
+INSERT INTO cleaning_records (task_id, assignee_user_id, due_date, status, completed_at, completed_by, postponed_to, memo) VALUES
+  (@task_bath301, @sena,  DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'DONE',      DATE_SUB(NOW(), INTERVAL 5 DAY), @hana, NULL, '하나가 대신 청소'),
+  (@task_bath301, @doori, CURDATE(),                           'POSTPONED', NULL, NULL, DATE_ADD(CURDATE(), INTERVAL 2 DAY), '시험 준비로 이틀 미룸'),
+  (@task_bath301, @doori, DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'SCHEDULED', NULL, NULL, NULL, NULL),
+  (@task_recycle, @sena,  CURDATE(),                           'SCHEDULED', NULL, NULL, NULL, NULL);
 
 -- ---------------------------------------------------------------------
 -- 지출과 분담 (분담 금액의 합 = 지출 금액)

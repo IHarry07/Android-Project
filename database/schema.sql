@@ -9,6 +9,9 @@
 --     방장은 위임하기 전에는 방을 나가거나 탈퇴할 수 없다. (서버에서 검사)
 --   * 일정은 구분 없이 모두 방 구성원에게 공유된다.
 --   * 물품은 등록 회원(created_by)이 곧 소유자다.
+--   * 방을 나가거나 내보내질 때의 데이터 정리는 DB가 아니라 서버가 한 트랜잭션으로
+--     처리한다. (외래키가 회원만 가리켜서 "그 방에서의 그 사람"을 DB가 지정할 수 없다.)
+--     정리 내용은 database/README.md의 "방을 나갈 때 데이터 처리" 참고.
 --   * 모든 시각은 DATETIME이며 서버에서 UTC 또는 KST 중 하나로 통일한다.
 -- =====================================================================
 
@@ -220,7 +223,8 @@ CREATE TABLE IF NOT EXISTS cleaning_records (
   due_date          DATE            NOT NULL COMMENT '예정 날짜',
   status            ENUM('SCHEDULED','DONE','POSTPONED','SKIPPED') NOT NULL DEFAULT 'SCHEDULED' COMMENT '상태',
   completed_at      DATETIME        NULL COMMENT '완료 시각(DONE일 때만)',
-  postponed_to      DATE            NULL COMMENT '미룬 날짜(POSTPONED일 때만)',
+  completed_by      BIGINT UNSIGNED NULL COMMENT '실제로 청소를 완료한 회원(담당자와 다를 수 있음)',
+  postponed_to     DATE            NULL COMMENT '미룬 날짜(POSTPONED일 때만)',
   memo              VARCHAR(255)    NULL COMMENT '메모(미룸/건너뜀 사유 등)',
   created_at        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (record_id),
@@ -230,6 +234,8 @@ CREATE TABLE IF NOT EXISTS cleaning_records (
     FOREIGN KEY (task_id) REFERENCES cleaning_tasks (task_id) ON DELETE CASCADE,
   CONSTRAINT fk_cleaning_records_assignee
     FOREIGN KEY (assignee_user_id) REFERENCES users (user_id) ON DELETE SET NULL,
+  CONSTRAINT fk_cleaning_records_completed_by
+    FOREIGN KEY (completed_by) REFERENCES users (user_id) ON DELETE SET NULL,
   CONSTRAINT ck_cleaning_records_done
     CHECK ((status = 'DONE') = (completed_at IS NOT NULL)),
   CONSTRAINT ck_cleaning_records_postponed
@@ -284,3 +290,24 @@ CREATE TABLE IF NOT EXISTS expense_shares (
   CONSTRAINT ck_expense_shares_settled
     CHECK ((is_settled = 1) = (settled_at IS NOT NULL))
 ) ENGINE=InnoDB COMMENT='지출 분담';
+
+-- ---------------------------------------------------------------------
+-- 11. room_departures: 방 퇴장 기록
+--     방을 나가거나 내보내질 때 서버가 남긴다. 나간 사람이 결제하거나 분담한
+--     지출은 방의 기록으로 남기 때문에, 그 사람이 지금 구성원이 아니라
+--     나갔는지(LEFT) 추방됐는지(KICKED)를 지출 목록에서 보여주는 데 쓴다.
+--     같은 사람이 나갔다가 다시 가입할 수 있으므로 여러 행이 생길 수 있다.
+-- ---------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS room_departures (
+  departure_id   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '퇴장번호',
+  room_id        BIGINT UNSIGNED NOT NULL COMMENT '방번호',
+  user_id        BIGINT UNSIGNED NOT NULL COMMENT '나간 회원번호',
+  reason         ENUM('LEFT','KICKED') NOT NULL COMMENT 'LEFT 스스로 나감, KICKED 방장이 내보냄',
+  departed_at    DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '퇴장 시각',
+  PRIMARY KEY (departure_id),
+  KEY idx_room_departures_room_user (room_id, user_id),
+  CONSTRAINT fk_room_departures_room
+    FOREIGN KEY (room_id) REFERENCES rooms (room_id) ON DELETE CASCADE,
+  CONSTRAINT fk_room_departures_user
+    FOREIGN KEY (user_id) REFERENCES users (user_id)
+) ENGINE=InnoDB COMMENT='방 퇴장 기록';
