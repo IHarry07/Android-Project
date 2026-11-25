@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const env = require('./config/env');
 const { pool } = require('./config/db');
 const { notFound, errorHandler } = require('./middleware/errorHandler');
 const { asyncHandler } = require('./utils/errors');
@@ -7,6 +8,8 @@ const { asyncHandler } = require('./utils/errors');
 const app = express();
 
 app.disable('x-powered-by');
+// HTTPS 프록시 뒤에서 돌 때 실제 사용자 IP(X-Forwarded-For)를 쓴다. (.env 의 TRUST_PROXY)
+if (env.trustProxy) app.set('trust proxy', env.trustProxy);
 app.use(helmet());
 app.use(express.json({ limit: '100kb' }));
 

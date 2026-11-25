@@ -18,9 +18,29 @@ if (!/^[0-9a-fA-F]{64}$/.test(process.env.ACCOUNT_ENC_KEY)) {
   throw new Error('ACCOUNT_ENC_KEY는 64자리 16진수(32바이트)여야 합니다.');
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+if (isProduction && process.env.MAIL_DEV_CONSOLE === 'true') {
+  throw new Error('배포(NODE_ENV=production)에서는 MAIL_DEV_CONSOLE을 켤 수 없습니다. (인증번호가 로그에 남습니다)');
+}
+
+// 앞단 프록시(HTTPS를 처리하는 Caddy 등)를 믿을지. 믿어야 요청 수 제한이 실제 사용자 IP 기준으로 동작한다.
+//  - 비우면 믿지 않는다. (PC에서 직접 받는 개발·시연)
+//  - loopback: 같은 서버(127.0.0.1)의 프록시만 믿는다. (배포 서버 권장)
+//  - 숫자: 앞단 프록시 개수
+function parseTrustProxy(value) {
+  if (!value) return false;
+  if (/^\d+$/.test(value)) return Number(value);
+  if (value === 'true') return true;
+  return value;
+}
+
 module.exports = {
   isTest: process.env.NODE_ENV === 'test',
+  isProduction,
   port: Number(process.env.PORT || 3000),
+  // 서버가 받을 주소. 배포에서는 127.0.0.1(프록시만 접근)로, 비우면 모든 주소(같은 와이파이의 폰이 직접 접속).
+  host: process.env.HOST || undefined,
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY),
   db: {
     host: process.env.DB_HOST,
     port: Number(process.env.DB_PORT),

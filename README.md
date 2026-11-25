@@ -155,7 +155,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\dev-test.ps1 -StartServer -Se
 
 | 항목 | 결정 | 상태 |
 |---|---|---|
-| 배포·HTTPS | 발표 시연용으로 PC 서버 + HTTP 유지. 실제 배포 때 DB 정리와 함께 HTTPS 적용 | 보류 |
+| 배포·HTTPS | Oracle Cloud 무료 서버 + DuckDNS 무료 주소 + Caddy(Let's Encrypt) HTTPS, 빈 DB로 시작(2026-11-26 결정). 설치 묶음·스크립트는 `deploy/` 에 준비 완료, 절차는 `deploy/README.md`. Oracle·DuckDNS 가입과 서버 생성은 직접 해야 한다 | 서버 생성 대기 |
 | DB 접속 계정 | 서버는 전용 계정 roomade_app(roomade DB 읽기·쓰기만)으로 접속한다(2026-11-26 전환). 관리자 계정(root)은 `backend\.env.admin`으로 옮겨 마이그레이션·백업·테스트에만 쓴다 | 완료 |
 | 로그인 잠금 기록 | 서버 메모리 → DB(`login_attempts`)에 저장. 서버를 다시 켜도 잠금이 유지된다 | 완료 |
 | DB 자동 백업 | 작업 스케줄러 "RoomMade DB Backup" 등록(매일 03:00) | 완료 |

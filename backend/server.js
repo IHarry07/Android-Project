@@ -6,9 +6,10 @@ const { startScheduler, stopScheduler } = require('./src/services/notificationJo
 async function main() {
   // 시작할 때 DB에 연결되는지 먼저 확인한다.
   await pool.query('SELECT 1');
-  const server = app.listen(env.port, () => {
-    console.log(`룸메이드 서버 시작: http://localhost:${env.port} (DB: ${env.db.database})`);
-  });
+  const onListen = () => {
+    console.log(`룸메이드 서버 시작: http://${env.host || 'localhost'}:${env.port} (DB: ${env.db.database}${env.trustProxy ? ', 프록시 뒤' : ''})`);
+  };
+  const server = env.host ? app.listen(env.port, env.host, onListen) : app.listen(env.port, onListen);
   // 쉬고 있는 연결을 Node 기본값(5초)보다 오래 열어 둔다. 앱(OkHttp)은 30초 안에 쓰지 않은 연결을 먼저 버린다.
   // 기본값이면 앱이 이미 닫힌 연결로 요청을 보내 첫 요청이 가끔 실패한다. (예: 이메일 입력 후 인증번호 받기)
   server.keepAliveTimeout = 65 * 1000;

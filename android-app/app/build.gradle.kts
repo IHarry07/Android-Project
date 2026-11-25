@@ -12,7 +12,9 @@ if (file("google-services.json").exists()) {
 
 // 서버 주소는 android-app/local.properties 의 roomade.baseUrl 로 바꾼다.
 // 없으면 에뮬레이터용 기본값(10.0.2.2)을 쓴다. 실제 폰에서는 PC의 내부 IP로 바꾼다.
-//   예) roomade.baseUrl=http://192.168.0.10:3000/
+//   예) 시연(PC 서버):  roomade.baseUrl=http://192.168.0.10:3000/
+//       배포(HTTPS):   roomade.baseUrl=https://이름.duckdns.org/
+// 주소가 https:// 이면 암호화되지 않은 HTTP 통신을 앱에서 아예 막는다.
 val localProps = Properties().apply {
     val file = rootProject.file("local.properties")
     if (file.exists()) file.inputStream().use { load(it) }
@@ -37,6 +39,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "BASE_URL", "\"$serverBaseUrl\"")
+        // HTTP 서버(시연용 PC)일 때만 평문 통신을 허용한다. (AndroidManifest 의 usesCleartextTraffic)
+        manifestPlaceholders["usesCleartext"] = serverBaseUrl.startsWith("http://").toString()
     }
 
     buildFeatures {

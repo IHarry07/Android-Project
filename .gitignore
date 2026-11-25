@@ -25,3 +25,4 @@ Thumbs.db
 
 # ---- 백업 ----
 backups/
+deploy/dist/
