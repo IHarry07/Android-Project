@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rm.* 스타일들의 공통 부모 (점 이름 규칙) -->
+    <style name="Rm" />
+
+    <!-- 화면 제목 (상단) -->
+    <style name="Rm.TopTitle">
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_title</item>
+    </style>
+
+    <!-- 큰 제목 -->
+    <style name="Rm.H1">
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_title</item>
+        <item name="android:lineSpacingMultiplier">1.15</item>
+    </style>
+
+    <!-- 설명 문구 -->
+    <style name="Rm.Sub">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">@color/rm_sub</item>
+    </style>
+
+    <!-- 입력칸 위 라벨 -->
+    <style name="Rm.Label">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_title</item>
+    </style>
+
+    <!-- 입력칸 아래 도움말 -->
+    <style name="Rm.Helper">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/rm_sub</item>
+    </style>
+
+    <!-- 입력칸 -->
+    <style name="Rm.Input">
+        <item name="android:background">@drawable/bg_input</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/rm_title</item>
+        <item name="android:textColorHint">@color/rm_hint</item>
+    </style>
+
+    <!-- 주 버튼 (채워진 알약 모양) -->
+    <style name="Rm.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="backgroundTint">@color/rm_primary</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- 보조 버튼 (테두리만 있는 알약 모양) -->
+    <style name="Rm.Button.Outline" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">56dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_primary</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="strokeColor">@color/rm_border</item>
+        <item name="strokeWidth">1.5dp</item>
+        <item name="backgroundTint">@color/white</item>
+        <item name="cornerRadius">28dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- 아래 메뉴바 -->
+    <style name="Rm.NavItem">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:gravity">center_horizontal</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <style name="Rm.NavPill">
+        <item name="android:layout_width">56dp</item>
+        <item name="android:layout_height">36dp</item>
+        <item name="android:background">@drawable/bg_nav_pill_off</item>
+    </style>
+
+    <style name="Rm.NavIcon">
+        <item name="android:layout_width">24dp</item>
+        <item name="android:layout_height">24dp</item>
+        <item name="android:layout_gravity">center</item>
+    </style>
+
+    <style name="Rm.NavLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_sub</item>
+    </style>
+
+    <!-- 필터 칩 -->
+    <style name="Rm.Chip">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_chip_off</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">20dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:textColor">@color/rm_sub</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- 구분 탭 (내 음식 / 공용 음식) -->
+    <style name="Rm.Segment">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/rm_sub</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- 프로필 메뉴 한 줄 -->
+    <style name="Rm.MenuRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">52dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">16dp</item>
+    </style>
+
+    <style name="Rm.MenuLabel">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">16dp</item>
+        <item name="android:textColor">@color/rm_title</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <!-- 안내 카드 -->
+    <style name="Rm.TintCard">
+        <item name="android:background">@drawable/bg_card_tint</item>
+        <item name="android:padding">20dp</item>
+    </style>
+
+    <!-- 팝업(알림창): 카드 색 바탕, 둥근 모서리, 제목은 진한 갈색, 확인 버튼은 주황 -->
+    <style name="Rm.DialogShape" parent="ShapeAppearance.Material3.Corner.ExtraLarge">
+        <item name="cornerSize">24dp</item>
+    </style>
+
+    <style name="Rm.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/rm_title</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Rm.DialogBody" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">@color/rm_sub</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineSpacingMultiplier">1.2</item>
+    </style>
+
+    <style name="Rm.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:textColor">@color/rm_primary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Rm.DialogButton.Sub">
+        <item name="android:textColor">@color/rm_sub</item>
+    </style>
+
+    <style name="Rm.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorPrimary">@color/rm_primary</item>
+        <item name="colorSurface">@color/rm_card</item>
+        <item name="colorOnSurface">@color/rm_title</item>
+        <item name="colorOnSurfaceVariant">@color/rm_sub</item>
+        <item name="shapeAppearance">@style/Rm.DialogShape</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/Rm.DialogTitle</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/Rm.DialogBody</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Rm.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Rm.DialogButton.Sub</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Rm.DialogButton.Sub</item>
+    </style>
+</resources>

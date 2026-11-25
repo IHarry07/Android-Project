@@ -1,0 +1,26 @@
+# ---- 비밀값: 절대 올리지 않는다 ----
+.env
+*.env.local
+*firebase-adminsdk*.json
+*.keystore
+*.jks
+
+# ---- 설치·빌드 결과 ----
+node_modules/
+**/build/
+.gradle/
+.kotlin/
+*.apk
+*.aab
+captures/
+
+# ---- 개인 환경 ----
+local.properties
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+
+# ---- 백업 ----
+backups/

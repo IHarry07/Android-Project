@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rm_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="24dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="24dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                style="@style/Rm.TopTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="검색" />
+
+            <include
+                android:id="@+id/bell"
+                layout="@layout/view_bell" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Rm.Sub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="우리 방의 음식 · 물품 · 일정을 찾아보세요." />
+
+        <!-- 검색창 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/bg_input"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="20dp"
+            android:paddingEnd="8dp">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/ic_search"
+                app:tint="@color/rm_primary" />
+
+            <EditText
+                android:id="@+id/etSearch"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:background="@null"
+                android:hint="검색어를 입력해 주세요"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLength="50"
+                android:maxLines="1"
+                android:textColor="@color/rm_title"
+                android:textColorHint="@color/rm_hint"
+                android:textSize="17sp" />
+
+            <ImageView
+                android:id="@+id/ivClear"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="지우기"
+                android:padding="8dp"
+                android:src="@drawable/ic_close"
+                android:visibility="gone"
+                app:tint="@color/rm_primary" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/Rm.Helper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="이름, 보관 장소, 담당자로 검색할 수 있어요." />
+
+        <!-- 분류 -->
+        <HorizontalScrollView
+            android:id="@+id/scrollChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipAll"
+                    style="@style/Rm.Chip" />
+
+                <TextView
+                    android:id="@+id/chipFood"
+                    style="@style/Rm.Chip"
+                    android:layout_marginStart="8dp" />
+
+                <TextView
+                    android:id="@+id/chipSupply"
+                    style="@style/Rm.Chip"
+                    android:layout_marginStart="8dp" />
+
+                <TextView
+                    android:id="@+id/chipSchedule"
+                    style="@style/Rm.Chip"
+                    android:layout_marginStart="8dp" />
+            </LinearLayout>
+        </HorizontalScrollView>
+
+        <LinearLayout
+            android:id="@+id/layoutResultHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvResultHeader"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/rm_title"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvResultCount"
+                style="@style/Rm.Sub"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvSearchEmpty"
+            style="@style/Rm.Sub"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:paddingTop="40dp"
+            android:paddingBottom="40dp"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/layoutResults"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+
+        <TextView
+            android:id="@+id/tvResultFootnote"
+            style="@style/Rm.Helper"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="다른 구성원의 개인 음식·물품도 보이지만 수정은 등록한 사람만 할 수 있어요."
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rm_bg"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp">
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="뒤로"
+            android:padding="12dp"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            style="@style/Rm.TopTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="비밀번호 찾기" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
+
+            <!-- 1단계: 아이디와 이메일 -->
+            <LinearLayout
+                android:id="@+id/layoutEmailStep1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/Rm.H1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="이메일로 인증번호를 보내요" />
+
+                <TextView
+                    style="@style/Rm.Sub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="가입할 때 등록한 아이디와 이메일을 입력해 주세요." />
+
+                <TextView
+                    style="@style/Rm.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="아이디" />
+
+                <EditText
+                    android:id="@+id/etEmailLoginId"
+                    style="@style/Rm.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="아이디를 입력해 주세요"
+                    android:inputType="text"
+                    android:maxLines="1" />
+
+                <TextView
+                    style="@style/Rm.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:text="이메일" />
+
+                <EditText
+                    android:id="@+id/etEmailAddress"
+                    style="@style/Rm.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="example@email.com"
+                    android:inputType="textEmailAddress"
+                    android:maxLength="100"
+                    android:maxLines="1" />
+
+                <TextView
+                    style="@style/Rm.Helper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="이메일을 등록하지 않았다면 이전 화면에서 가입 정보로 찾기를 이용해 주세요." />
+
+                <Button
+                    android:id="@+id/btnSendCode"
+                    style="@style/Rm.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="인증번호 받기" />
+            </LinearLayout>
+
+            <!-- 2단계: 인증번호 -->
+            <LinearLayout
+                android:id="@+id/layoutEmailStep2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    style="@style/Rm.H1"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="인증번호를 입력해 주세요" />
+
+                <TextView
+                    android:id="@+id/tvCodeGuide"
+                    style="@style/Rm.Sub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp" />
+
+                <TextView
+                    style="@style/Rm.Label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="인증번호 6자리" />
+
+                <EditText
+                    android:id="@+id/etCode"
+                    style="@style/Rm.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:hint="숫자 6자리"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:maxLines="1" />
+
+                <TextView
+                    style="@style/Rm.Helper"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="인증번호는 10분 동안 쓸 수 있어요. 메일이 오지 않으면 스팸함도 확인해 주세요." />
+
+                <Button
+                    android:id="@+id/btnVerifyCode"
+                    style="@style/Rm.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="28dp"
+                    android:text="확인" />
+
+                <TextView
+                    android:id="@+id/tvResend"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="16dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:padding="12dp"
+                    android:text="인증번호 다시 받기"
+                    android:textColor="@color/rm_primary"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

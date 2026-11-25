@@ -1,0 +1,15 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- 밝은 화면. 설정에서 어두운 모드를 고르면 values-night 의 색이 적용된다. -->
+    <style name="Base.Theme.Android_Project" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/rm_primary</item>
+        <item name="android:windowBackground">@color/rm_bg</item>
+        <item name="android:statusBarColor">@color/rm_bg</item>
+        <item name="android:navigationBarColor">@color/rm_bg</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:textColorHint">@color/rm_hint</item>
+        <item name="materialAlertDialogTheme">@style/Rm.MaterialAlertDialog</item>
+    </style>
+
+    <style name="Theme.Android_Project" parent="Base.Theme.Android_Project" />
+</resources>

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 폰 알림창에 알림을 띄운다. (Android 13 이상에서는 처음에 허용을 묻는다.) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- QR 코드 스캔 -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <!-- Android 17 이상에서 실제 폰이 PC(같은 Wi-Fi)의 서버에 접속할 때 필요하다. -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
+    <application
+        android:name=".App"
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Android_Project">
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ui.SignupActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.TermsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ResetMethodActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.ResetByEmailActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.ResetPasswordActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.main.MainTabsActivity"
+            android:exported="false" />
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+        <activity
+            android:name=".ui.profile.PhotoCropActivity"
+            android:exported="false" />
+        <service
+            android:name=".notification.PushService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <activity
+            android:name=".ui.expense.ExpenseActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.expense.ExpenseDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.expense.ExpenseFormActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.support.FaqActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.support.SupportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.support.InquiryFormActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.support.InquiryDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.notice.NoticeListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.notice.NoticeDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.memo.MemoListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.memo.MemoEditActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.settings.WithdrawActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.settings.SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.settings.NotificationSettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.notification.NotificationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.item.FridgeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.cleaning.CleaningStatusActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.cleaning.CleaningHistoryActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.cleaning.CleaningSettingsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.profile.MyInfoActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.calendar.ScheduleFormActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.item.QrScanActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.item.ItemFormActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.room.RoomCreateActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.room.RoomEditActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".ui.room.RoomJoinActivity"
+            android:exported="false" />
+    </application>
+
+</manifest>

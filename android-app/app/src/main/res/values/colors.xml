@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- 룸메이드 디자인 색상 (Figma 시안에서 추출) -->
+    <color name="rm_bg">#FFF7F2</color>
+    <color name="rm_primary">#C65A2A</color>
+    <color name="rm_title">#8A3412</color>
+    <color name="rm_sub">#A65A3A</color>
+    <color name="rm_hint">#C9A596</color>
+    <color name="rm_border">#F5DFD3</color>
+    <color name="rm_tint">#FBE9DE</color>
+    <color name="rm_danger">#B3261E</color>
+    <!-- 카드·입력칸 바탕(밝은 모드는 흰색)과 선택된 메뉴 알약 -->
+    <color name="rm_card">#FFFFFF</color>
+    <color name="rm_pill">#F2D4C5</color>
+
+    <!-- 캘린더 일정 종류 표시 색 (공유=rm_primary, 개인=rm_title) -->
+    <color name="rm_kind_cleaning">#5B8C6B</color>
+    <color name="rm_kind_expiry">#D69A2D</color>
+</resources>

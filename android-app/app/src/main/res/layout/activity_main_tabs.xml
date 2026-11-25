@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rm_bg"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/tabContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <View
+        android:id="@+id/navDivider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/rm_border" />
+
+    <!-- 아래 메뉴바 (방이 있을 때만 보인다) -->
+    <LinearLayout
+        android:id="@+id/navBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="10dp"
+        android:paddingBottom="8dp">
+
+        <LinearLayout
+            android:id="@+id/tabCalendar"
+            style="@style/Rm.NavItem">
+
+            <FrameLayout style="@style/Rm.NavPill">
+
+                <ImageView
+                    style="@style/Rm.NavIcon"
+                    android:src="@drawable/ic_calendar" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Rm.NavLabel"
+                android:text="캘린더" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabWarehouse"
+            style="@style/Rm.NavItem">
+
+            <FrameLayout style="@style/Rm.NavPill">
+
+                <ImageView
+                    style="@style/Rm.NavIcon"
+                    android:src="@drawable/ic_archive" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Rm.NavLabel"
+                android:text="창고" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabHome"
+            style="@style/Rm.NavItem">
+
+            <FrameLayout style="@style/Rm.NavPill">
+
+                <ImageView
+                    style="@style/Rm.NavIcon"
+                    android:src="@drawable/ic_home" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Rm.NavLabel"
+                android:text="방 정보" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabSearch"
+            style="@style/Rm.NavItem">
+
+            <FrameLayout style="@style/Rm.NavPill">
+
+                <ImageView
+                    style="@style/Rm.NavIcon"
+                    android:src="@drawable/ic_search" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Rm.NavLabel"
+                android:text="검색" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/tabProfile"
+            style="@style/Rm.NavItem">
+
+            <FrameLayout style="@style/Rm.NavPill">
+
+                <ImageView
+                    style="@style/Rm.NavIcon"
+                    android:src="@drawable/ic_person" />
+            </FrameLayout>
+
+            <TextView
+                style="@style/Rm.NavLabel"
+                android:text="프로필" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

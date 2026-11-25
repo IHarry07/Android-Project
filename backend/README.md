@@ -1,0 +1,284 @@
+# 룸메이드(Roomade) 서버
+
+Node.js + Express + MySQL로 만든 API 서버다. 회원, 방, 창고(물품), 일정, 청소, 지출·정산, 앱 내부 알림 기능이 들어 있다. 푸시 알림과 바코드 정보 조회는 아직 없다.
+
+## 실행 방법
+
+1. MySQL에 `database/schema.sql`을 적용한다. (자세한 내용은 `database/README.md`)
+2. `.env.example`을 `.env`로 복사하고 값을 채운다.
+3. 패키지를 설치하고 서버를 시작한다.
+
+```bash
+cd backend
+npm install
+npm start        # 개발 중에는 npm run dev (파일을 고치면 자동 재시작)
+```
+
+서버 주소는 `http://localhost:3000`이다. Android 에뮬레이터에서는 `http://10.0.2.2:3000`으로 접속한다. 실제 폰에서는 PC의 내부 IP를 쓰고, 같은 Wi-Fi여야 한다.
+
+서버가 켜져 있는 동안 알림 스케줄러가 함께 돈다. 끄려면 환경변수 `DISABLE_SCHEDULER=true`로 시작한다. 테스트에서는 항상 꺼진다.
+
+`.env`에는 DB 비밀번호와 암호 키가 들어가므로 **GitHub에 올리지 않는다.** `.gitignore`에 이미 제외되어 있다. `ACCOUNT_ENC_KEY`를 잃어버리면 저장된 계좌 정보를 복호화할 수 없으니 따로 안전하게 보관한다.
+
+## 테스트
+
+테스트는 실제 `roomade`가 아니라 `roomade_test` DB를 쓴다. 테스트 시작 때 이 DB의 모든 데이터를 비운다. DB 이름이 `_test`로 끝나지 않으면 실행이 중단된다.
+
+테스트 DB를 처음 만들 때는 `schema.sql`의 DB 이름을 `roomade_test`로 바꿔서 MySQL에 적용한다.
+
+```bash
+npm test
+```
+
+108개 테스트가 인증, 토큰 만료, 정보 보호, 방 가입과 정원, 물품, 일정, 청소, 지출·정산, 알림, 방을 나갈 때의 데이터 정리를 검증한다. 동시 요청 상황도 포함한다. 정원을 넘는 동시 가입, 같은 청소를 동시에 완료, 수량을 동시에 줄이기, 나가는 도중의 물품 등록이다.
+
+## 로그인 방식
+
+로그인하면 토큰 하나를 받고, 이후 모든 요청에 `Authorization: Bearer <토큰>`을 붙인다.
+
+| 로그인 유지 | 토큰 유효 기간 | 갱신 |
+|---|---|---|
+| 체크함 | 로그인한 날부터 30일 | 없음. 30일 뒤 반드시 만료 |
+| 체크 안 함 | 마지막 요청 후 1시간 | 요청마다 응답 헤더 `X-Refreshed-Token`으로 새 토큰을 준다. 앱은 이 값을 받으면 저장된 토큰을 교체해야 한다. |
+
+비밀번호를 바꾸면 이전에 발급된 토큰이 모두 무효가 된다. 로그아웃은 앱이 저장된 토큰을 지우는 것으로 끝난다.
+
+### 앱이 처리해야 할 오류 코드
+
+| 코드 | 의미 | 앱 동작 |
+|---|---|---|
+| `AUTH_REQUIRED` | 토큰 없음 | 로그인 화면으로 이동 |
+| `TOKEN_EXPIRED` | 토큰 만료 | "보안상의 이유로 로그인이 해제되었습니다" 팝업 후 로그인 화면으로 이동 |
+| `TOKEN_INVALID` | 위조·손상·비밀번호 변경 | 팝업 없이 로그인 화면으로 이동 |
+
+## 오류 응답 형식
+
+```json
+{ "error": { "code": "ROOM_FULL", "message": "방 정원이 가득 찼습니다." } }
+```
+
+입력 검증 오류는 `VALIDATION_ERROR`이며 `details`에 항목별 메시지가 들어간다.
+
+## API 목록
+
+`인증 필요`가 아닌 API는 토큰 없이 호출한다.
+
+### 인증
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/api/auth/signup` | 회원가입 |
+| POST | `/api/auth/login` | 로그인, 본문에 `keepLogin`(true/false) |
+| POST | `/api/auth/reset-password/verify` | 비밀번호 찾기 1단계: 가입 정보 확인. 본문 `loginId`, `name`, `phone`, `birthDate`. 맞으면 `resetToken`(10분) |
+| POST | `/api/auth/reset-password` | 비밀번호 찾기 2단계: 새 비밀번호. 본문 `resetToken`, `newPassword` |
+| POST | `/api/auth/logout` | 로그아웃 안내 |
+| GET | `/api/auth/check-login-id?loginId=` | 아이디 중복 확인 |
+| GET | `/api/auth/check-nickname?nickname=` | 닉네임 중복 확인 |
+
+**비밀번호 찾기**는 로그인하지 않은 상태에서 두 단계로 쓴다. 메일·문자 발송이 없어서 가입 정보로 본인을 확인한다.
+1. `POST /api/auth/reset-password/verify`: 가입 정보(아이디, 이름, 전화번호, 생년월일)가 **모두** 같으면 10분 동안 쓸 수 있는 `resetToken`을 준다. 이 단계에서는 비밀번호가 바뀌지 않는다.
+2. `POST /api/auth/reset-password`: `resetToken`과 `newPassword`를 보내면 새 비밀번호로 바뀐다.
+
+- 어느 항목이 틀렸는지, 그 아이디가 있는지는 알려주지 않는다. 모두 같은 `IDENTITY_MISMATCH`(400)다.
+- 같은 아이디로 5번 틀리면 15분 동안 `TOO_MANY_ATTEMPTS`(429)로 막고, 그동안에는 맞는 정보로도 거절한다. 성공하면 횟수가 초기화된다. (서버 메모리에만 저장하므로 서버를 다시 켜면 초기화된다.) 같은 IP는 15분에 10번까지다.
+- `resetToken`은 로그인 토큰과 다른 비밀키로 서명해서 로그인이 필요한 API에는 쓸 수 없고, **한 번만** 쓸 수 있다. (비밀번호가 바뀌면 같은 토큰은 무효다. 동시에 두 번 보내도 한쪽만 성공한다.) 위조·만료·이미 사용된 토큰은 `RESET_TOKEN_INVALID`(400)다.
+- 재설정하면 이전에 발급된 로그인 토큰은 모두 무효가 된다. 재설정만으로 로그인되지는 않는다.
+- 가입 정보를 아는 사람은 누구나 재설정할 수 있다는 한계가 있다. 이메일 본인 확인이 생기면 바꾸는 것이 좋다.
+
+회원가입 본문은 `loginId`, `password`, `name`, `nickname`, `phone`, `accountInfo`, `birthDate`(YYYY-MM-DD), `gender`(MALE, FEMALE, OTHER)다. 모두 필수다.
+
+### 내 정보 (인증 필요)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/users/me` | 내 정보와 가입한 방. 계좌는 마지막 4자리만 보인다. `stats.completedCleanings`는 내가 직접 완료한 청소 횟수(건너뛰기는 제외). |
+| PATCH | `/api/users/me` | 이름, 닉네임, 전화번호 수정 |
+| PATCH | `/api/users/me/password` | 비밀번호 변경. `currentPassword`, `newPassword` 필요. 새 토큰을 돌려준다. |
+| PATCH | `/api/users/me/account` | 계좌 변경. `currentPassword`, `accountInfo` 필요 |
+
+### 방 (인증 필요)
+
+| 메서드 | 경로 | 권한 | 설명 |
+|---|---|---|---|
+| POST | `/api/rooms` | 누구나 | 방 만들기. 본문 `roomName`(필수), `description`(방 소개, 선택, 100자 이하), `capacity`. 초대 코드를 한 번만 평문으로 돌려준다. |
+| GET | `/api/rooms/me` | 누구나 | 내가 가입한 방. 없으면 `null` |
+| POST | `/api/rooms/join` | 누구나 | 초대 코드로 가입 |
+| GET | `/api/rooms/:roomId` | 구성원 | 방 정보 |
+| GET | `/api/rooms/:roomId/members` | 구성원 | 구성원 목록. 닉네임만 보인다. |
+| DELETE | `/api/rooms/:roomId/members/me` | 구성원 | 방 나가기. 내가 등록한 공용 물품이 있으면 `?sharedItems=TRANSFER` 또는 `DELETE`가 필요하다. |
+| PATCH | `/api/rooms/:roomId` | 방장 | 방 이름, 방 소개, 정원 수정. 방 소개는 빈 문자열이나 `null`을 보내면 지워진다. |
+| POST | `/api/rooms/:roomId/invitations` | 방장 | 초대 코드 재발급. 이전 코드는 즉시 무효 |
+| POST | `/api/rooms/:roomId/transfer-owner` | 방장 | 방장 위임. 본문 `userId` |
+| DELETE | `/api/rooms/:roomId/members/:userId` | 방장 | 구성원 내보내기 |
+
+### 방 오류 코드
+
+| 코드 | 상황 |
+|---|---|
+| `ALREADY_IN_ROOM` | 이미 방에 가입되어 있음. 같은 계정으로 다른 기기에서 가입해도 동일 |
+| `INVALID_INVITE_CODE` | 코드가 없거나 만료됨 |
+| `ROOM_FULL` | 정원이 가득 참 |
+| `OWNER_MUST_TRANSFER` | 방장이 다른 구성원이 있는데 나가려 함. 먼저 위임해야 함 |
+| `NOT_ROOM_OWNER` | 방장만 할 수 있는 작업 |
+| `ROOM_NOT_FOUND` | 방이 없거나 내가 구성원이 아님. 방이 있는지 알려주지 않으려고 둘 다 같은 코드를 쓴다. |
+| `UNSETTLED_EXPENSES` | 정산이 안 끝나서 나갈 수 없음. `details`에 `owes`(낼 건수), `owed`(받을 건수) |
+| `SHARED_ITEMS_CHOICE_REQUIRED` | 내가 등록한 공용 물품의 처리 방법을 골라야 함. `details`에 `sharedItemCount` |
+
+### 창고 (인증 필요, 방 구성원)
+
+경로는 모두 `/api/rooms/:roomId` 아래다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/items` | 물품 등록. `name`, `category`(FOOD, SUPPLY), `ownershipType`(PERSONAL, SHARED)가 필수 |
+| GET | `/items` | 목록. `scope`(all, mine, shared), `status`(기본 STORED, ALL 가능), `category`, `expiringWithinDays`, `search`, `limit` |
+| GET | `/items/:itemId` | 상세 |
+| PATCH | `/items/:itemId` | 수정 |
+| POST | `/items/:itemId/adjust` | 수량 증감. 본문 `delta`(예: -1). 0 미만이 되면 거절 |
+| DELETE | `/items/:itemId` | 삭제 |
+
+방 구성원은 개인 물품도 볼 수 있고 소유자 이름이 같이 나온다. 개인 물품은 등록한 사람만 고치고 지울 수 있다. 공용 물품은 누구나 고칠 수 있고, 소유 구분 변경만 등록한 사람이 한다. 수량이 0이 되면 상태가 USED_UP으로, 다시 늘리면 STORED로 바뀐다.
+
+### 일정 (인증 필요, 방 구성원)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/schedules` | 일정 등록. `title`, `startAt`, `endAt`(`2026-12-05T18:00` 형식). 선택: `description`(내용, 500자), `visibility`(`SHARED` 기본 / `PERSONAL`) |
+| GET | `/schedules` | 목록. `from`, `to`(날짜)를 주면 그 기간과 겹치는 일정만 |
+| GET | `/schedules/:scheduleId` | 상세 |
+| PATCH | `/schedules/:scheduleId` | 수정. 작성자나 방장만 |
+| DELETE | `/schedules/:scheduleId` | 삭제. 작성자나 방장만 |
+
+`visibility`가 `SHARED`(기본)인 일정은 방 구성원 모두에게 공유되고, `PERSONAL`(개인) 일정은 작성자에게만 보인다. 개인 일정은 다른 구성원은 물론 방장에게도 목록에 나오지 않고, 주소로 직접 조회·수정·삭제해도 `SCHEDULE_NOT_FOUND`(404)다. 개인 일정은 시작 알림도 만들지 않는다. 공개 범위는 작성자만 바꿀 수 있고, `description`에 `null`을 보내면 내용을 지운다. 시각에는 시간대 정보가 없고 `YYYY-MM-DD HH:mm:ss`로 저장하고 돌려준다.
+
+### 청소 (인증 필요, 방 구성원)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/cleaning-tasks` | 항목 등록. `areaName`, `nextDueDate`, `assigneeUserId`(선택), `repeatType`(NONE, DAILY, WEEKLY, MONTHLY), `repeatInterval` |
+| GET | `/cleaning-tasks` | 목록. `active`(true, false, all), `dueBy`(날짜) |
+| GET | `/cleaning-tasks/:taskId` | 상세 |
+| PATCH | `/cleaning-tasks/:taskId` | 수정. 담당자·날짜를 바꾸면 예정 회차도 함께 바뀐다. |
+| DELETE | `/cleaning-tasks/:taskId` | 삭제. 방장만 |
+| POST | `/cleaning-tasks/:taskId/complete` | 완료. **그 회차의 담당자만 할 수 있다**(방장도 `NOT_TASK_ASSIGNEE` 403, 담당자가 없는 청소는 누구나). 다음 예정일로 넘어간다. 반복이 없으면 비활성이 된다. |
+| POST | `/cleaning-tasks/:taskId/skip` | 건너뛰기. 완료와 같이 **그 회차의 담당자만** 할 수 있다(담당자가 없는 청소는 누구나) |
+| POST | `/cleaning-tasks/:taskId/postpone` | 미루기. 본문 `postponedTo`, `memo`(선택). 담당자, 방장, 또는 담당자가 없을 때 누구나. **한 회차에 1번, 현재 예정일에서 최대 7일까지** |
+| GET | `/cleaning-tasks/:taskId/records` | 한 청소의 기록(완료·건너뜀·미룸·예정) |
+| POST | `/cleaning-tasks/:taskId/reassign` | **담당자 바꾸기**. 본문 `assigneeUserId`, `scope`(`ONCE` 이번 회차만 / `ALWAYS` 앞으로 계속), `reason`(선택), `dueDate`(선택). 방 구성원 누구나 |
+| GET | `/cleaning-history` | **방 전체 이력**(완료·건너뜀·미룸·담당자 변경). `taskId`(한 청소만), `limit`(기본 50, 최대 200) |
+| GET | `/cleaning-settings` | 청소당번 설정 조회. `{ settings: { repeat, rotation, rows: [{ taskId, userId, nickname, areaName, weekday, nextDueDate }] } }` |
+| PUT | `/cleaning-settings` | 청소당번 설정을 한 번에 저장. 방 구성원 누구나 |
+
+**청소당번 설정(`/cleaning-settings`)** 은 화면의 "청소당번 설정"을 위한 묶음 API다. 구성원별 담당 구역과 요일, 반복 주기, 순번 순환을 한 번에 저장한다.
+
+- 본문: `{ repeat: "DAILY"|"WEEKLY"|"BIWEEKLY"|"MONTHLY"|"NONE", rotation: true|false, rows: [{ taskId?, userId, areaName, weekday }] }`. `weekday`는 0=일요일 … 6=토요일. `BIWEEKLY`(격주)는 2주마다(`WEEKLY`, 간격 2)로 저장된다. `DAILY`(매일)는 요일과 상관없이 오늘부터 시작하고, `NONE`(한 번만)은 그 요일에 한 번 하고 완료하면 비활성이 된다.
+- **`rows`의 순서가 순번**이다. 같은 사람이 여러 줄이면 처음 나온 자리가 그 사람의 순번이다.
+- `taskId`가 있는 줄은 그 항목을 고치고(요일이 그대로면 예정일을 유지), 없는 줄은 새로 만든다(예정일은 오늘을 포함해 가장 가까운 그 요일). 줄에 없는 기존 항목은 **삭제하지 않고 비활성**으로 바꿔 이력을 남긴다.
+- `rotation`이 true이면 완료·건너뛰기 뒤 다음 회차의 담당자가 순번대로 다음 사람으로 넘어가고(마지막 다음은 처음), 미루기는 담당자를 바꾸지 않는다. 방을 나간 사람은 순번에서 빠진다. 순번이 한 명뿐이면 바뀌지 않는다.
+- 오류: `ASSIGNEE_NOT_MEMBER`(담당자가 방 구성원이 아님), `TASK_NOT_FOUND`(다른 방이나 없는 `taskId`). 검증에 실패한 요청은 아무것도 바꾸지 않는다.
+
+**완료·건너뛰기 권한**: 완료와 건너뛰기는 그 회차의 담당자만 할 수 있다(방장도 `NOT_TASK_ASSIGNEE` 403). 다른 사람이 대신 청소하려면 먼저 "담당자 바꾸기(이번 회차만)"로 담당자를 바꾸면 되고, 그러면 대신하는 사람이 담당자가 되어 처리할 수 있다. 미루기는 담당자·방장(담당자가 없으면 누구나)이 할 수 있다. 방 구성원 누구나 담당자를 바꿀 수 있고, 바꿀 때마다 누가·누구에서 누구로·이번만/계속·사유가 이력(`cleaning_assignee_changes`)에 남는다. `ONCE`(이번 회차만 대신)이면 항목에 `isSubstitute: true`와 `baseAssignee`(원래 담당자)가 보이고, 회차가 끝나면 **원래 담당자로 돌아간다**(순환이면 원래 담당자를 기준으로 다음 사람). `ALWAYS`는 앞으로 계속 새 담당자다. 청소 항목 수정(`PATCH`)이나 청소당번 설정에서 담당자를 바꿔도 `ALWAYS`로 이력이 남는다. 이미 그 사람이 담당이면 `SAME_ASSIGNEE`(400). 방 전체 이력(`/cleaning-history`)은 예정일(회차) 최근순이다. 건너뜀·미룸 기록에는 처리한 시각이 따로 없어서 시각이 아닌 회차 기준으로 정렬한다.
+
+**미루기 제한**: 한 회차는 **1번만** 미룰 수 있고(미룬 날짜로 옮겨진 회차는 다시 미룰 수 없다, `ALREADY_POSTPONED` 409), 현재 예정일에서 **최대 7일**까지만 미룰 수 있다(`POSTPONE_TOO_LONG` 400, `details.latestDate`). 완료·건너뛰어서 다음 회차로 넘어가면 그 회차는 다시 1번 미룰 수 있다. 청소 항목의 `isPostponed`(이번 회차를 이미 미뤘는지)와 `postponeUntil`(미룰 수 있는 마지막 날)로 화면에서 미리 알 수 있다. 완료·건너뛰기·미루기에 `memo`(255자 이하, 선택)를 남길 수 있고 이력에 보인다.
+
+완료, 건너뛰기, 미루기 본문에 화면에 보이던 `dueDate`를 같이 보내는 것을 권장한다. 그 사이 다른 사람이 먼저 처리했다면 `STALE_DUE_DATE`(409)를 돌려주고 `details.currentDueDate`로 최신 예정일을 알려준다. 같은 청소가 두 번 처리되는 것을 막는다.
+
+다음 예정일은 지금 예정일에 주기를 더하되, 오늘 이후가 될 때까지 반복해서 더한다. 늦게 완료해도 이미 지난 날짜가 예정일이 되지 않는다. 담당자 대신 다른 사람이 청소하면 이력에 담당자와 실제 완료자가 따로 남는다.
+
+### 비밀번호 찾기 (이메일 인증)
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/api/auth/reset-password/email/send` | `{ loginId, email }`. 맞으면 이메일로 6자리 인증번호를 보낸다(10분 유효, 같은 회원에게 60초에 한 번). 맞든 틀리든 같은 응답이다. 같은 아이디로 15분에 5번까지. `.env`에 SMTP 설정이 없으면 503 `EMAIL_NOT_AVAILABLE`. |
+| POST | `/api/auth/reset-password/email/verify` | `{ loginId, code }`. 맞으면 `resetToken`을 준다(이후는 `POST /api/auth/reset-password`로 새 비밀번호). 틀리면 400 `INVALID_CODE`, 5번 틀리면 그 인증번호는 무효, 한 번 쓴 번호는 다시 못 쓴다. |
+
+메일 발송은 `.env`의 `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM`(`.env.example` 참고). 인증번호는 해시로만 저장한다(`password_reset_codes`).
+### 이메일·고객센터 문의
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/api/auth/signup` | `email`(선택)을 받을 수 있다. 빈 문자열은 없는 것으로 보고, 형식이 틀리면 400, 이미 쓰는 이메일이면 409 `EMAIL_TAKEN`. 소문자로 저장한다. |
+| GET·PATCH | `/api/users/me` | 응답에 `email`이 있다. PATCH로 `email`을 바꾸거나(`""`이면 삭제) 지울 수 있다. 탈퇴하면 이메일은 지워진다. |
+| POST | `/api/inquiries` | 고객센터 문의 남기기. `{ title, content }`, 하루 10건까지(초과하면 429 `TOO_MANY_INQUIRIES`). |
+| GET | `/api/inquiries`, `/api/inquiries/:inquiryId` | 내 문의 목록·상세(`status`는 `WAITING`/`ANSWERED`, 답변 `answer`·`answeredAt`). 다른 회원의 문의는 404. 탈퇴하면 문의는 삭제된다. |
+
+운영자는 API가 아니라 서버 PC에서 `node scripts/inquiry.js list|show|reply` 로 문의를 보고 답변한다(사용법은 파일 맨 위 설명).
+### 약관 동의·회원 탈퇴·공지사항·공동 메모
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/api/auth/signup` | **`agreeTerms`와 `agreePrivacy`가 모두 `true`여야 한다**(아니면 400). 동의한 약관 버전과 시각이 `users`에 기록된다. |
+| DELETE | `/api/users/me` | 회원 탈퇴. 본문 `{ password, sharedItems? }`. 비밀번호가 틀리면 403 `INVALID_PASSWORD`. 방 나가기와 같은 규칙: 다른 구성원이 있는 방장은 409 `OWNER_MUST_TRANSFER`, 정산이 남았으면 409 `UNSETTLED_EXPENSES`(`details`에 `owes`·`owed`), 공용 물품이 있으면 409 `SHARED_ITEMS_CHOICE_REQUIRED`(`sharedItems`에 `TRANSFER`/`DELETE`). 탈퇴하면 개인정보·사진·알림·기기 토큰을 지우고 `users` 행은 비식별 값으로 남긴다(`withdrawn_at`). 이전 토큰은 무효이고 로그인·비밀번호 찾기에서 제외된다. |
+| GET | `/api/notices`, `/api/notices/:noticeId` | 공지 목록(고정 먼저, 본문 없음)과 상세. 로그인 필요. 등록·수정·삭제는 API가 아니라 서버 PC의 `node scripts/notice.js`로 한다. |
+| GET·POST | `/api/rooms/:roomId/memos` | 공동 메모 목록(최근 수정순)·작성. 방 구성원. |
+| GET·PATCH·DELETE | `/api/rooms/:roomId/memos/:memoId` | 메모 조회·수정·삭제. 수정·삭제는 작성자나 방장만(403 `NOT_MEMO_AUTHOR`). 응답의 `canEdit`은 내가 고칠 수 있는지, `author`는 `{ userId, nickname, status }`. |
+### 통합 검색 (인증 필요, 방 구성원)
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/rooms/:roomId/search?q=` | 음식·물품·일정·청소를 한 번에 검색. 응답 `{ query, counts: {all, food, supply, schedule}, results: [{ type, id, title, line1, line2 }] }`. `type`은 FOOD / SUPPLY / SCHEDULE / CLEANING. 음식·물품은 이름·보관 장소·등록한 사람, 일정은 제목·내용·작성자, 청소는 항목·담당자로 찾고 대소문자는 구분하지 않는다. 다른 구성원의 개인 일정은 나오지 않는다. 방 구성원이 아니면 404. |
+### 지출·정산 (인증 필요, 방 구성원)
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/expenses` | 지출 등록. 결제자는 항상 본인. `title`, `amount`, `expenseDate`와 함께 `participantUserIds`(균등 분담) 또는 `shares`(금액 직접 지정) 중 하나 |
+| GET | `/expenses` | 목록. `from`, `to`, `limit`. 최신 날짜순 |
+| GET | `/expenses/balances` | 나와 다른 사람 사이의 미정산 금액 요약 |
+| GET | `/expenses/:expenseId` | 상세 |
+| PATCH | `/expenses/:expenseId` | 수정. 결제자만. 정산된 분담이 있으면 금액·분담은 못 바꾼다. |
+| DELETE | `/expenses/:expenseId` | 삭제. 결제자만. 정산된 분담이 있으면 못 지운다. |
+| PATCH | `/expenses/:expenseId/shares/:userId` | 정산 완료 표시. 본문 `isSettled`. 돈을 받은 결제자만 할 수 있다. |
+
+균등 분담에서 나누어떨어지지 않는 금액은 앞에서부터 한 명씩 1원을 더 낸다. 결제자 본인의 몫은 처음부터 정산 완료다. 분담 금액의 합이 지출 금액과 다르면 `SHARE_SUM_MISMATCH`다.
+
+응답에서 결제자와 분담자는 `{ userId, nickname, status }`로 나온다. `status`는 `MEMBER`(현재 구성원), `LEFT`(스스로 나감), `KICKED`(방장이 내보냄)다. 나간 사람이 얽힌 지출도 기록으로 남는다.
+
+`/expenses/balances`의 `amount`가 양수이면 상대가 나에게 줄 돈, 음수이면 내가 상대에게 줄 돈이다. 나간 사람과의 금액도 나오며, 받을 돈은 결제자가 정산 완료로 정리할 수 있다.
+
+### 알림 (인증 필요)
+
+알림은 서버가 만들어 저장하고, 앱이 목록을 조회해서 보여주는 방식이다. 푸시 알림은 아직 없다.
+
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| GET | `/api/notifications` | 최신순 목록. `filter`(all, unread, read), `limit`(기본 30), `beforeId`. 응답에 `unreadCount`와 다음 페이지용 `nextBeforeId`가 들어 있다. |
+| GET | `/api/notifications/unread-count` | 읽지 않은 개수. 앱 아이콘의 숫자 표시용 |
+| PATCH | `/api/notifications/:notificationId/read` | 한 건을 읽음 처리 |
+| POST | `/api/notifications/read-all` | 모두 읽음 처리 |
+| DELETE | `/api/notifications/:notificationId` | 한 건 삭제 |
+| DELETE | `/api/notifications/read` | 읽은 알림 모두 삭제 |
+
+알림 하나에는 `type`, `title`, `body`, `isRead`, 그리고 눌렀을 때 이동할 `target`(`type`, `id`)이 들어 있다. 대상이 삭제되면 `target`을 가진 알림도 같이 삭제된다.
+
+| type | 언제 | 받는 사람 |
+|---|---|---|
+| `ITEM_EXPIRY` | 유통기한 3일 전, 1일 전, 당일 오전 9시. 지난 뒤에는 "유통기한이 지났어요"를 한 번만 | 개인 물품은 등록한 사람, 공용 물품은 방 구성원 모두 |
+| `CLEANING_DUE` | 청소 예정일 당일 오전 9시 | 담당자. 기한이 지난 청소는 다시 알리지 않는다. |
+| `SCHEDULE_START` | 일정 시작 1시간 전부터 | 작성자를 뺀 방 구성원 |
+| `EXPENSE_SHARE` | 지출에 내 분담금이 생겼을 때 | 결제자를 뺀 분담자 |
+| `EXPENSE_SETTLED` | 결제자가 정산 완료를 표시하거나 취소했을 때 | 해당 분담자 |
+| `CLEANING_REASSIGNED` | 청소 담당자가 바뀌었을 때 (담당자 바꾸기, 청소 항목 수정, 청소당번 설정 모두). 새 담당자에게는 "청소 담당이 되었어요", 원래 담당자에게는 "청소 담당에서 빠졌어요" | 새 담당자와 원래 담당자. **바꾼 본인은 받지 않는다.** 눌렀을 때 이동할 대상은 그 청소(`CLEANING_TASK`). 순환으로 자동으로 넘어가는 경우에는 보내지 않는다. |
+
+유통기한이 지난 뒤 알림은 지난 지 3일 안인 물품만 대상으로 한다. 서버가 하루 꺼져 있어도 놓치지 않고, 처음 켤 때 오래전에 지난 물품의 알림이 한꺼번에 쏟아지지 않는다. 사용 완료나 폐기 상태의 물품은 알리지 않는다.
+
+오전 9시 알림은 DB 서버 시계 기준으로 9시 이후 하루 한 번 만든다. 서버가 9시에 꺼져 있었다면 켜지는 시점에 그날 몫을 만든다. 모든 알림에 중복 방지 키가 있어서 서버를 다시 켜거나 여러 대로 돌려도 같은 알림이 두 번 생기지 않는다. 90일이 지난 알림은 매일 정리한다.
+
+## 정한 규칙
+
+- 방장이 혼자 남은 상태에서 방을 나가면 **방이 삭제된다.** 방의 물품, 일정, 청소, 지출 데이터도 함께 삭제된다.
+- **방을 나갈 때:** 정산이 안 끝났으면 나갈 수 없다. 나가면 개인 물품과 일정은 삭제되고, 공용 물품은 방장에게 넘기거나 삭제 중에서 나가는 사람이 고른다. 청소 담당은 비워지고, 지출·분담 기록은 방에 남는다.
+- **내보낼 때:** 방장은 정산이 안 끝났어도 내보낼 수 있다. 같은 정리가 적용되고 공용 물품은 방장에게 넘어간다. 지출 기록에는 추방됨으로 남는다.
+- 방을 나가거나 내보내지면 그 사람이 받은 알림은 모두 삭제된다. 삭제되는 물품·일정을 가리키던 다른 사람의 알림도 함께 삭제된다.
+- 이미 방에 없는 사람의 정산을 결제자가 정리할 때는 알림을 보내지 않는다.
+- 물품, 일정 등을 만드는 요청은 방 행을 공유 잠금으로 확인한다. 누군가 나가는 중이면 그 처리가 끝날 때까지 기다리므로, 나간 사람의 데이터가 새로 생기지 않는다.
+- 구성원 아닌 사람이 방의 어떤 기능에 접근해도 방이 있는지 알 수 없도록 `ROOM_NOT_FOUND`(404)를 준다.
+- 초대 코드는 6자리(영문 대문자와 숫자, 헷갈리는 0·O·1·I 제외)이고 DB에는 해시로만 저장한다. 6자리 이전에 발급한 8자리 코드도 만료될 때까지는 그대로 쓸 수 있다. 방장도 코드를 다시 볼 수 없고 재발급해야 한다. 기본 유효 기간은 7일이며 1일에서 30일 사이로 정할 수 있다.
+- 로그인과 초대 코드 입력은 같은 IP에서 15분에 20번까지만 시도할 수 있다.
+- 구성원 목록에는 이름, 전화번호, 계좌 같은 개인정보를 담지 않는다.
+- 정원을 현재 인원보다 작게 줄이는 것은 막지 않는다. 이후에는 새로 가입할 수 없다.
+
+## 배포 전에 바꿀 것
+
+지금은 개발용이라 DB에 root 계정을 쓴다. 실제로 서비스하기 전에 다음을 처리한다.
+
+1. MySQL root 비밀번호를 강한 것으로 바꾼다. 지금 `root`는 매우 약하다.
+2. `roomade` DB에서 읽기·쓰기만 할 수 있는 전용 계정을 만들고 `.env`의 `DB_USER`, `DB_PASSWORD`를 바꾼다.
+3. MySQL 포트(3306)를 외부에 열지 않는다.
+4. 서버를 HTTPS 뒤에 둔다. HTTP로는 토큰과 비밀번호가 그대로 노출된다.
+5. 운영 서버의 `.env`에는 개발용과 다른 `JWT_SECRET`과 `ACCOUNT_ENC_KEY`를 쓴다.

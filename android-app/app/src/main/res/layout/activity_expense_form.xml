@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/rm_bg"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="24dp">
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="뒤로"
+            android:padding="12dp"
+            android:src="@drawable/ic_back" />
+
+        <TextView
+            android:id="@+id/tvFormTitle"
+            style="@style/Rm.TopTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="지출 등록" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
+
+            <TextView
+                style="@style/Rm.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="내용" />
+
+            <EditText
+                android:id="@+id/etExpenseTitle"
+                style="@style/Rm.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:hint="예: 장보기, 휴지 구매"
+                android:inputType="text"
+                android:maxLength="100"
+                android:maxLines="1" />
+
+            <TextView
+                style="@style/Rm.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="금액 (원)" />
+
+            <EditText
+                android:id="@+id/etExpenseAmount"
+                style="@style/Rm.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:hint="결제한 총 금액"
+                android:inputType="number"
+                android:maxLength="9"
+                android:maxLines="1" />
+
+            <TextView
+                style="@style/Rm.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="날짜" />
+
+            <TextView
+                android:id="@+id/tvExpenseDate"
+                style="@style/Rm.Input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical" />
+
+            <TextView
+                style="@style/Rm.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="나누는 방법" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/chipEqual"
+                    style="@style/Rm.Chip"
+                    android:text="똑같이 나누기" />
+
+                <TextView
+                    android:id="@+id/chipCustom"
+                    style="@style/Rm.Chip"
+                    android:layout_marginStart="8dp"
+                    android:text="금액 직접 정하기" />
+            </LinearLayout>
+
+            <TextView
+                style="@style/Rm.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="함께한 사람" />
+
+            <LinearLayout
+                android:id="@+id/layoutParticipants"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/tvSplitHint"
+                style="@style/Rm.Helper"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp" />
+
+            <Button
+                android:id="@+id/btnSaveExpense"
+                style="@style/Rm.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:text="저장" />
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

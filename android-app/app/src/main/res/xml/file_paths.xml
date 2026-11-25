@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 프로필 사진 촬영 결과를 잠깐 저장하는 곳 -->
+<paths>
+    <cache-path name="camera" path="camera/" />
+</paths>

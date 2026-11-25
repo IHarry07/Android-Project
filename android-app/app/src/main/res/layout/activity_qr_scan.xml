@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageView
+        android:id="@+id/ivBack"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="40dp"
+        android:background="@drawable/bg_card_white_plain"
+        android:contentDescription="닫기"
+        android:padding="12dp"
+        android:src="@drawable/ic_back" />
+
+    <TextView
+        android:id="@+id/tvScanGuide"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_margin="24dp"
+        android:background="@drawable/bg_card_tint"
+        android:gravity="center"
+        android:padding="20dp"
+        android:text="상품의 QR 코드를 카메라에 비춰 주세요."
+        android:textColor="@color/rm_title"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+</FrameLayout>

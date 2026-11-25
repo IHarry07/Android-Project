@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 어두운 모드 색. 밝은 모드와 같은 이름을 쓰면 화면이 자동으로 바뀐다. -->
+<resources>
+    <color name="rm_bg">#1D1917</color>
+    <color name="rm_primary">#E8814F</color>
+    <color name="rm_title">#F6D2BC</color>
+    <color name="rm_sub">#D4A58E</color>
+    <color name="rm_hint">#8C7466</color>
+    <color name="rm_border">#3B312B</color>
+    <color name="rm_tint">#3A2B23</color>
+    <color name="rm_danger">#F2B8B5</color>
+    <color name="rm_card">#292220</color>
+    <color name="rm_pill">#5A3A2B</color>
+    <color name="rm_kind_cleaning">#7FB591</color>
+    <color name="rm_kind_expiry">#E3B259</color>
+</resources>

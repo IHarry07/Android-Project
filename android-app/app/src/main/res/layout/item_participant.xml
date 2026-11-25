@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:background="@drawable/bg_card_white"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingTop="6dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="6dp">
+
+    <CheckBox
+        android:id="@+id/cbParticipant"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textColor="@color/rm_title"
+        android:textSize="15sp"
+        app:buttonIconTint="@color/white"
+                    app:buttonTint="@color/rm_primary" />
+
+    <EditText
+        android:id="@+id/etParticipantAmount"
+        android:layout_width="110dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_field_small"
+        android:gravity="end"
+        android:hint="금액"
+        android:inputType="number"
+        android:maxLength="9"
+        android:maxLines="1"
+        android:paddingStart="12dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:textColor="@color/rm_title"
+        android:textColorHint="@color/rm_hint"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvParticipantAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/rm_sub"
+        android:textSize="14sp" />
+</LinearLayout>
