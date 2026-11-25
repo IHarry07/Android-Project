@@ -131,6 +131,8 @@ async function purgeOld() {
   await pool.query('DELETE FROM email_verifications WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
   await pool.query('DELETE FROM password_reset_codes WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
   await pool.query('DELETE FROM revoked_sessions WHERE expires_at < NOW()');
+  // 하루 지난 로그인 실패·요청 제한 기록
+  await require('./attemptLimiter').purgeOld(pool);
   return result.affectedRows;
 }
 

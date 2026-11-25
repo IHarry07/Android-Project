@@ -11,6 +11,12 @@ $ErrorActionPreference = 'Stop'
 $envFile = Join-Path $PSScriptRoot '..\backend\.env'
 $cfg = @{}
 Get-Content $envFile -Encoding UTF8 | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=(.*)$' } | ForEach-Object { $cfg[$Matches[1]] = $Matches[2].Trim() }
+# 백업(프로시저·트리거 포함)은 관리자 권한이 필요하다. backend\.env.admin 이 있으면 그 계정을 쓴다.
+$adminFile = Join-Path $PSScriptRoot '..\backend\.env.admin'
+if (Test-Path $adminFile) {
+  Get-Content $adminFile -Encoding UTF8 | Where-Object { $_ -match '^\s*([A-Z_]+)\s*=(.*)$' } | ForEach-Object { $cfg[$Matches[1]] = $Matches[2].Trim() }
+}
+if ($cfg.DB_ADMIN_USER) { $cfg.DB_USER = $cfg.DB_ADMIN_USER; $cfg.DB_PASSWORD = $cfg.DB_ADMIN_PASSWORD }
 
 $dump = (Get-Command mysqldump -ErrorAction SilentlyContinue).Source
 if (-not $dump -and $env:MYSQL_BIN) { $dump = Join-Path $env:MYSQL_BIN 'mysqldump.exe' }

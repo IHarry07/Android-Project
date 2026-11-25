@@ -1,5 +1,6 @@
 # ---- 비밀값: 절대 올리지 않는다 ----
 .env
+.env.admin
 *.env.local
 *firebase-adminsdk*.json
 *.keystore

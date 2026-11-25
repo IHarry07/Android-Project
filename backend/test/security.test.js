@@ -165,6 +165,33 @@ describe('로그인 5번 실패하면 15분 잠금', () => {
     for (let i = 0; i < 4; i += 1) assert.equal((await login(u.body.loginId, 'wrongpass99')).status, 401);
     assert.equal((await login(u.body.loginId, 'password1')).status, 200, '다시 4번 틀려도 잠기지 않는다');
   });
+
+  it('잠금 기록은 DB에 있어서 서버를 다시 켜도 유지되고, 아이디는 그대로 저장하지 않는다', async () => {
+    const u = await makeUser();
+    for (let i = 0; i < 5; i += 1) await login(u.body.loginId, 'wrongpass99');
+    const [rows] = await pool.query('SELECT attempt_key, fail_count FROM login_attempts');
+    assert.ok(rows.some((r) => r.fail_count === 5), '실패 5번이 DB에 남는다');
+    assert.ok(rows.every((r) => /^[0-9a-f]{64}$/.test(r.attempt_key) && !r.attempt_key.includes(u.body.loginId)), '해시로만 저장');
+
+    // 서버 메모리와 상관없이 DB 기록만으로 막힌다: 모듈을 새로 불러와도(=서버 재시작) 잠겨 있다.
+    delete require.cache[require.resolve('../src/services/attemptLimiter')];
+    const fresh = require('../src/services/attemptLimiter');
+    assert.equal(await fresh.isLocked(`login:${u.body.loginId}`), true);
+    assert.equal((await login(u.body.loginId, 'password1')).status, 429);
+  });
+
+  it('15분이 지난 기록은 1부터 다시 센다', async () => {
+    const u = await makeUser();
+    for (let i = 0; i < 5; i += 1) await login(u.body.loginId, 'wrongpass99');
+    // 첫 실패를 16분 전으로 옮긴다.
+    await pool.query('UPDATE login_attempts SET first_failed_at = DATE_SUB(NOW(), INTERVAL 16 MINUTE)');
+    assert.equal((await login(u.body.loginId, 'password1')).status, 200, '15분이 지나면 풀린다');
+    for (let i = 0; i < 5; i += 1) await login(u.body.loginId, 'wrongpass99');
+    await pool.query('UPDATE login_attempts SET first_failed_at = DATE_SUB(NOW(), INTERVAL 16 MINUTE)');
+    assert.equal((await login(u.body.loginId, 'wrongpass99')).status, 401);
+    const [rows] = await pool.query('SELECT fail_count FROM login_attempts WHERE first_failed_at > DATE_SUB(NOW(), INTERVAL 1 MINUTE)');
+    assert.deepEqual(rows.map((r) => r.fail_count), [1], '오래된 기록 위에서 1부터 다시 센다');
+  });
 });
 
 describe('보안 알림 메일', () => {

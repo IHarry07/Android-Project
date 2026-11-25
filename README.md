@@ -156,7 +156,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\dev-test.ps1 -StartServer -Se
 | 항목 | 결정 | 상태 |
 |---|---|---|
 | 배포·HTTPS | 발표 시연용으로 PC 서버 + HTTP 유지. 실제 배포 때 DB 정리와 함께 HTTPS 적용 | 보류 |
-| DB 접속 계정 | 서버 전용 계정(roomade_app, roomade DB 읽기·쓰기만)을 만들었다. 비밀번호는 `.env`에 주석으로 적어 두었고, `.env` 전환은 배포 때 | 완료 |
+| DB 접속 계정 | 서버는 전용 계정 roomade_app(roomade DB 읽기·쓰기만)으로 접속한다(2026-11-26 전환). 관리자 계정(root)은 `backend\.env.admin`으로 옮겨 마이그레이션·백업·테스트에만 쓴다 | 완료 |
+| 로그인 잠금 기록 | 서버 메모리 → DB(`login_attempts`)에 저장. 서버를 다시 켜도 잠금이 유지된다 | 완료 |
+| DB 자동 백업 | 작업 스케줄러 "RoomMade DB Backup" 등록(매일 03:00) | 완료 |
 | 비밀번호 찾기 | **이메일 인증으로만** 찾는다. 가입 정보(이름·전화·생일) 방식은 없앤다 | 완료 |
 | 이메일 | **필수**, 가입할 때와 바꿀 때 인증번호로 확인. 이메일 없는 기존 회원은 로그인하면 먼저 등록해야 쓸 수 있다 | 완료 |
 | 로그아웃 | 로그아웃하면 서버에서 그 로그인을 바로 무효화 | 완료 |
@@ -194,7 +196,7 @@ A=lkom06(폰), B=검증용 계정(같은 방 Test), C=검증용 계정(다른 �
 - **이메일 없는 기존 회원**: 로그인하면 "이메일 등록" 화면이 먼저 나오고, 인증해 등록해야 앱을 쓸 수 있다(로그아웃은 가능).
 - **내 정보의 이메일**: 바로 고칠 수 없고 [변경]에서 새 이메일을 인증해야 바뀐다. 바뀌면 이전 주소로 알림 메일이 간다. 이메일은 지울 수 없다.
 - **비밀번호 찾기**: 로그인 화면의 "비밀번호를 잊으셨나요?"는 바로 "아이디와 이메일로 찾기"로 간다. 가입 정보(이름·전화·생일) 방식과 방법 선택 화면은 없앴다.
-- **로그인 잠금**: 같은 아이디로 비밀번호를 5번 틀리면 15분 동안 맞는 비밀번호로도 로그인할 수 없고, 등록된 이메일로 알림이 간다. 잠금 기록은 서버 메모리에 있어 서버를 다시 켜면 풀린다.
+- **로그인 잠금**: 같은 아이디로 비밀번호를 5번 틀리면 15분 동안 맞는 비밀번호로도 로그인할 수 없고, 등록된 이메일로 알림이 간다. 잠금 기록은 DB(`login_attempts`, 아이디는 해시로만 저장)에 있어 서버를 다시 켜도 유지되고, 하루 지난 기록은 매일 정리 작업이 지운다.
 - **로그아웃**: 서버가 그 로그인(세션)을 바로 무효화한다. 다른 기기의 로그인은 그대로다.
 - **보안 알림 메일**: 비밀번호 변경·재설정, 이메일 변경(이전 주소로), 회원 탈퇴 완료, 로그인 잠금.
 - **요청 제한**: 아이디·닉네임 중복확인은 IP당 15분 60회, 이메일 인증번호는 IP당 15분에 보내기 30회·확인 60회와 같은 주소에 60초에 한 번, 로그인한 회원은 1분 120회(`.env`의 `USER_RATE_LIMIT_PER_MINUTE`).
@@ -202,10 +204,16 @@ A=lkom06(폰), B=검증용 계정(같은 방 Test), C=검증용 계정(다른 �
 - **앱 백업**: 로그인 토큰·푸시 기기 정보는 안드로이드 자동 백업과 기기 이전에서 빠진다. 새 폰에서는 다시 로그인한다.
 
 ### 백업과 키 보관
-- **DB 백업**: `powershell -ExecutionPolicy Bypass -File E:\Project\RoomMade_Merge\scripts\backup-db.ps1` → `E:\Project\backups\db\roomade_날짜.sql`, 최근 7개만 남긴다. 매일 자동으로 하려면 관리자 권한 없이 아래 한 줄로 작업 스케줄러에 등록한다(매일 새벽 3시, PC가 켜져 있어야 한다).
-  `schtasks /Create /TN "RoomMade DB 백업" /SC DAILY /ST 03:00 /TR "powershell -ExecutionPolicy Bypass -File E:\Project\RoomMade_Merge\scripts\backup-db.ps1"`
+- **DB 백업**: `powershell -ExecutionPolicy Bypass -File E:\Project\RoomMade_Merge\scripts\backup-db.ps1` → `E:\Project\backups\db\roomade_날짜.sql`, 최근 7개만 남긴다. 관리자 계정(`backend\.env.admin`)으로 백업한다.
+  - 이 PC에는 작업 스케줄러 **"RoomMade DB Backup"**(매일 새벽 3시, PC가 켜져 있고 로그인돼 있어야 한다)으로 등록해 두었다. 다른 PC에서 등록하려면:
+  `schtasks /Create /TN "RoomMade DB Backup" /SC DAILY /ST 03:00 /TR "powershell -NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -File E:\Project\RoomMade_Merge\scripts\backup-db.ps1" /F`
+  - 확인: `schtasks /Query /TN "RoomMade DB Backup" /V /FO LIST` (Last Result 0이면 성공), 지금 한 번 돌리기: `schtasks /Run /TN "RoomMade DB Backup"`
 - **복원**: `mysql -h 127.0.0.1 -P <포트> -u root -p roomade < 백업파일.sql`
-- **키 보관**: `backend\.env`(JWT·계좌 암호화 키, 메일 앱 비밀번호, DB 비밀번호)와 Firebase 서비스 계정 키(`E:\roommade-...json`)는 Git과 압축 백업에 들어가지 않는다. 비밀번호 관리 도구나 암호를 건 USB처럼 **이 PC 밖 안전한 곳에 따로 한 부** 보관한다. 특히 `ACCOUNT_ENC_KEY`를 잃으면 저장된 계좌 정보를 복구할 수 없다.
+- **DB 계정**: 서버(`backend\.env`)는 roomade_app(읽기·쓰기만), 관리자 일은 `backend\.env.admin`(root)을 쓴다.
+  - 마이그레이션 적용: `node scripts/migrate.js ../database/migrations/<파일>.sql roomade roomade_test`
+  - 서버 계정 권한 확인: `node scripts/check-db-user.js` (표 만들기·삭제가 "불가"면 정상)
+  - 팀원 PC처럼 `.env.admin`이 없으면 모든 일에 `.env`의 계정을 그대로 쓴다.
+- **키 보관**: `backend\.env`(JWT·계좌 암호화 키, 메일 앱 비밀번호, roomade_app 비밀번호), `backend\.env.admin`(root 비밀번호)과 Firebase 서비스 계정 키(`E:\roommade-...json`)는 Git과 압축 백업에 들어가지 않는다. 비밀번호 관리 도구나 암호를 건 USB처럼 **이 PC 밖 안전한 곳에 따로 한 부** 보관한다. 특히 `ACCOUNT_ENC_KEY`를 잃으면 저장된 계좌 정보를 복구할 수 없다.
 
 ## 알려진 사항
 - 앱 안에서 방 관련 파일 일부가 `ui/` 폴더에 있지만 패키지는 `ui.room`이다. 동작에는 영향이 없다.

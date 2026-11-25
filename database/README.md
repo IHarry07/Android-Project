@@ -203,3 +203,17 @@ MySQL 8.0.46에서 다음을 확인했다.
 - 청소 완료·미룸의 필수 값 규칙, 분담 중복과 정산 값 규칙이 동작한다.
 - 방 삭제 때 하위 데이터가 함께 삭제된다.
 - 정원 트리거의 동시 가입 상황은 서버 통합 테스트에서 확인했다. 정원 3명인 방에 8명이 동시에 가입하면 2명만 들어간다.
+
+## 10. 이미 있는 DB에 바뀐 점 적용하기 (마이그레이션)
+
+`database/migrations/` 의 파일을 날짜 순서대로 한 번씩 적용한다. 표를 만들고 바꾸는 일이라 관리자 계정으로 한다.
+
+```
+cd backend
+node scripts/migrate.js ../database/migrations/2026-12-02_login_attempts.sql roomade roomade_test
+```
+
+- 관리자 계정은 `backend/.env.admin` 의 `DB_ADMIN_USER` / `DB_ADMIN_PASSWORD` 를 쓰고, 이 파일이 없으면 `backend/.env` 의 계정을 쓴다.
+- 서버는 읽기·쓰기만 되는 `roomade_app` 계정으로 돌린다. (`node scripts/check-db-user.js` 로 확인)
+- 새로 만드는 DB는 `schema.sql` 에 모든 변경이 들어 있으므로 마이그레이션을 따로 적용하지 않아도 된다.
+- 2026-12-02: `login_attempts` (로그인 실패 잠금 기록을 DB에 저장)

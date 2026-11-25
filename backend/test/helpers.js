@@ -2,6 +2,12 @@
 // 이 파일을 가장 먼저 불러와야 DB 이름이 roomade_test로 바뀐다.
 process.env.NODE_ENV = 'test';
 process.env.DB_NAME = 'roomade_test';
+// 테스트는 표를 비우므로(TRUNCATE) 관리자 계정이 필요하다. .env.admin 이 있으면 그 계정을 쓴다.
+require('../scripts/adminDb').loadEnv();
+if (process.env.DB_ADMIN_USER) {
+  process.env.DB_USER = process.env.DB_ADMIN_USER;
+  process.env.DB_PASSWORD = process.env.DB_ADMIN_PASSWORD || '';
+}
 
 const assert = require('node:assert/strict');
 const env = require('../src/config/env');
@@ -95,7 +101,7 @@ async function makeRoom(memberCount = 3, capacity = 10) {
 
 async function clearTables() {
   await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const t of ['revoked_sessions', 'email_verifications', 'password_reset_codes', 'inquiries', 'room_memos', 'notices', 'user_photos', 'user_notification_settings', 'device_tokens', 'notifications', 'room_departures', 'expense_shares', 'expenses', 'cleaning_records',
+  for (const t of ['login_attempts', 'revoked_sessions','email_verifications', 'password_reset_codes', 'inquiries', 'room_memos', 'notices', 'user_photos', 'user_notification_settings', 'device_tokens', 'notifications', 'room_departures', 'expense_shares', 'expenses', 'cleaning_records',
     'cleaning_assignee_changes', 'cleaning_rotation', 'cleaning_tasks', 'schedules',
     'items', 'room_invitations', 'room_members', 'rooms', 'users']) {
     await pool.query(`TRUNCATE TABLE ${t}`);

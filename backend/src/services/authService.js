@@ -60,11 +60,11 @@ async function signup(data) {
  * 로그인.
  *  - 같은 아이디로 비밀번호를 5번 틀리면 15분 동안 잠근다. 잠길 때 등록된 이메일로 알린다.
  *  - 없는 아이디도 똑같이 세고 똑같이 잠가서, 잠겼는지로 아이디가 있는지 알 수 없다.
- *  - 잠금 기록은 서버 메모리에 있어서 서버를 다시 켜면 풀린다.
+ *  - 잠금 기록은 DB에 있어서 서버를 다시 켜도 풀리지 않는다.
  */
 async function login({ loginId, password, keepLogin }) {
   const lockKey = `login:${loginId}`;
-  if (attempts.isLocked(lockKey)) {
+  if (await attempts.isLocked(lockKey)) {
     throw new AppError(429, 'ACCOUNT_LOCKED', '비밀번호를 여러 번 틀려서 15분 동안 로그인할 수 없어요. 잠시 후 다시 시도해 주세요.');
   }
 
@@ -75,13 +75,13 @@ async function login({ loginId, password, keepLogin }) {
   const user = rows[0];
   const ok = await bcrypt.compare(password, user ? user.password_hash : DUMMY_HASH);
   if (!user || !ok) {
-    const count = attempts.recordFailure(lockKey);
+    const count = await attempts.recordFailure(lockKey);
     if (count === attempts.MAX_FAILURES && user) securityMail.loginLocked(user.email);
     // 아이디가 없는지 비밀번호가 틀렸는지 알려주지 않는다.
     throw new AppError(401, 'INVALID_CREDENTIALS', '아이디 또는 비밀번호가 올바르지 않습니다.');
   }
 
-  attempts.clear(lockKey);
+  await attempts.clear(lockKey);
   const token = signToken({
     userId: user.user_id, keep: keepLogin, passwordHash: user.password_hash, sid: newSessionId(),
   });
@@ -131,7 +131,7 @@ async function resetPassword({ resetToken, newPassword }) {
   );
   if (result.affectedRows === 0) throw invalid();
 
-  attempts.clear(`login:${user.login_id}`);
+  await attempts.clear(`login:${user.login_id}`);
   securityMail.passwordChanged(user.email);
   return { message: '비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요. 다른 기기의 로그인은 모두 해제됩니다.' };
 }
@@ -154,10 +154,10 @@ async function sendResetCode({ loginId, email }) {
     throw new AppError(503, 'EMAIL_NOT_AVAILABLE', '이메일 인증을 할 수 없어요. 서버의 메일 설정을 확인해 주세요.');
   }
   const limitKey = `send:${loginId}`;
-  if (attempts.isLocked(limitKey)) {
+  if (await attempts.isLocked(limitKey)) {
     throw new AppError(429, 'TOO_MANY_ATTEMPTS', '인증번호를 너무 많이 요청했어요. 15분 뒤에 다시 시도해 주세요.');
   }
-  attempts.recordFailure(limitKey);
+  await attempts.recordFailure(limitKey);
 
   const generic = {
     message: '입력한 정보가 가입 정보와 같다면 이메일로 인증번호를 보냈어요. 메일이 오지 않으면 스팸함도 확인해 주세요.',
@@ -204,7 +204,7 @@ async function sendResetCode({ loginId, email }) {
  */
 async function verifyResetCode({ loginId, code }) {
   const limitKey = `verify:${loginId}`;
-  if (attempts.isLocked(limitKey)) {
+  if (await attempts.isLocked(limitKey)) {
     throw new AppError(429, 'TOO_MANY_ATTEMPTS', '인증번호를 여러 번 틀렸어요. 15분 뒤에 다시 시도해 주세요.');
   }
   const invalid = () => new AppError(400, 'INVALID_CODE', '인증번호가 올바르지 않거나 시간이 지났어요.');
@@ -217,7 +217,7 @@ async function verifyResetCode({ loginId, code }) {
   );
   const row = rows[0];
   if (!row || !row.alive || row.attempts >= CODE_MAX_ATTEMPTS) {
-    attempts.recordFailure(limitKey);
+    await attempts.recordFailure(limitKey);
     throw invalid();
   }
 
@@ -225,12 +225,12 @@ async function verifyResetCode({ loginId, code }) {
   const stored = Buffer.from(row.code_hash);
   if (given.length !== stored.length || !crypto.timingSafeEqual(given, stored)) {
     await pool.query('UPDATE password_reset_codes SET attempts = attempts + 1 WHERE user_id = ?', [row.user_id]);
-    attempts.recordFailure(limitKey);
+    await attempts.recordFailure(limitKey);
     throw invalid();
   }
 
   await pool.query('DELETE FROM password_reset_codes WHERE user_id = ?', [row.user_id]);
-  attempts.clear(limitKey);
+  await attempts.clear(limitKey);
   return {
     resetToken: signResetToken({ userId: row.user_id, passwordHash: row.password_hash }),
     expiresInSeconds: RESET_TTL_SECONDS,

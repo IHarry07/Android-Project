@@ -489,6 +489,15 @@ CREATE TABLE IF NOT EXISTS revoked_sessions (
   KEY idx_revoked_sessions_expires (expires_at)
 ) ENGINE=InnoDB COMMENT='로그아웃한 세션';
 
+-- 로그인 실패 잠금·비밀번호 찾기 요청 제한 기록 (서버를 다시 켜도 유지된다)
+CREATE TABLE IF NOT EXISTS login_attempts (
+  attempt_key     CHAR(64)     NOT NULL COMMENT '대상(login:아이디 등)의 SHA-256',
+  fail_count      INT UNSIGNED NOT NULL COMMENT '첫 실패부터 15분 안의 실패 횟수',
+  first_failed_at DATETIME     NOT NULL,
+  PRIMARY KEY (attempt_key),
+  KEY idx_login_attempts_first (first_failed_at)
+) ENGINE=InnoDB COMMENT='로그인 실패·요청 제한 기록';
+
 -- 프로필 사진. 같은 방 구성원에게 보일지는 users.photo_public 으로 정한다.
 CREATE TABLE IF NOT EXISTS user_photos (
   user_id     BIGINT UNSIGNED NOT NULL COMMENT '회원번호',
