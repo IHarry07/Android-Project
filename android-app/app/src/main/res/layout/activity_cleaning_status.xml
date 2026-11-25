@@ -31,7 +31,7 @@
             android:text="청소 현황" />
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -109,5 +109,5 @@
                 android:layout_marginTop="8dp"
                 android:text="청소당번 설정" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>

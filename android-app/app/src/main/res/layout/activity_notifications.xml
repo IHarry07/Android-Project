@@ -94,7 +94,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -144,5 +144,5 @@
                 android:text="알림을 누르면 해당 화면으로 이동하고, 길게 누르면 삭제할 수 있어요."
                 android:visibility="gone" />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>

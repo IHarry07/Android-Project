@@ -31,7 +31,7 @@
             android:text="청소 이력" />
     </LinearLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -77,5 +77,5 @@
                 android:layout_marginTop="4dp"
                 android:text="완료·건너뜀·미룸·담당자 변경을 청소 예정일이 최근인 순서로 보여줘요." />
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 </LinearLayout>
