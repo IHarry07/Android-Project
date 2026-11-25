@@ -239,7 +239,7 @@ async function rotateAssignee(conn, roomId, current) {
  * 담당자를 바꾼 기록을 남기고, 관련된 사람에게 알린다. scope: ONCE(이번 회차만) / ALWAYS(앞으로 계속)
  * 알림은 새 담당자와 원래 담당자에게 간다. 바꾼 본인은 이미 알고 있으므로 받지 않는다.
  */
-async function recordAssigneeChange(conn, { roomId, areaName, taskId, dueDate, from, to, by, scope, reason }) {
+async function recordAssigneeChange(conn, { roomId, areaName, taskId, dueDate, from, to, by, scope, reason, restored = false }) {
   const [result] = await conn.query(
     `INSERT INTO cleaning_assignee_changes (task_id, due_date, from_user_id, to_user_id, changed_by, scope, reason)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -259,13 +259,25 @@ async function recordAssigneeChange(conn, { roomId, areaName, taskId, dueDate, f
     dedupeKey: `CLEANING_REASSIGNED:${changeId}:${userId}`,
   });
 
-  if (isMember(to) && to !== by) {
-    add(to, '청소 담당이 되었어요',
-      `'${areaName}' 청소를 ${when} ${scope === 'ONCE' ? '대신하게' : '맡게'} 됐어요 (${nick(by)}님이 바꿨어요)`);
-  }
-  if (isMember(from) && from !== by && from !== to) {
-    add(from, '청소 담당에서 빠졌어요',
-      `'${areaName}' 청소는 ${when} ${nick(to)}님이 ${scope === 'ONCE' ? '대신해요' : '맡아요'} (${nick(by)}님이 바꿨어요)`);
+  if (restored) {
+    // 이번 회차만 대신하던 것을 원래 담당자에게 되돌린 경우. "대신하게 됐어요"가 아니라 "다시 맡아요"로 알린다.
+    if (isMember(to) && to !== by) {
+      add(to, '청소 담당으로 돌아왔어요',
+        `'${areaName}' 청소를 이번 회차에 다시 맡게 됐어요 (${nick(by)}님이 바꿨어요)`);
+    }
+    if (isMember(from) && from !== by && from !== to) {
+      add(from, '청소 담당에서 빠졌어요',
+        `'${areaName}' 청소는 이번 회차에 원래 담당자 ${nick(to)}님이 다시 맡아요 (${nick(by)}님이 바꿨어요)`);
+    }
+  } else {
+    if (isMember(to) && to !== by) {
+      add(to, '청소 담당이 되었어요',
+        `'${areaName}' 청소를 ${when} ${scope === 'ONCE' ? '대신하게' : '맡게'} 됐어요 (${nick(by)}님이 바꿨어요)`);
+    }
+    if (isMember(from) && from !== by && from !== to) {
+      add(from, '청소 담당에서 빠졌어요',
+        `'${areaName}' 청소는 ${when} ${nick(to)}님이 ${scope === 'ONCE' ? '대신해요' : '맡아요'} (${nick(by)}님이 바꿨어요)`);
+    }
   }
   await notifications.createNotifications(conn, rows);
   return changeId;
@@ -301,6 +313,8 @@ async function reassignTask(userId, roomId, taskId, { assigneeUserId, scope, rea
     await recordAssigneeChange(conn, {
       roomId, areaName: task.area_name, taskId, dueDate: task.next_due_date,
       from: task.assignee_user_id, to: assigneeUserId, by: userId, scope, reason,
+      // 누가 이번만 대신하던 중에 원래 담당자에게 "이번만" 되돌리면 대신하기가 풀린 것이다.
+      restored: scope === 'ONCE' && task.base_assignee_user_id != null && assigneeUserId === original,
     });
     return loadOne(conn, roomId, taskId);
   });

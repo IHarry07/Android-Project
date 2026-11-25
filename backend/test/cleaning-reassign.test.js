@@ -266,6 +266,21 @@ describe('청소 담당자 변경 알림', () => {
     assert.equal((await noticesOf(c)).length, 0, '바꾼 사람은 알림을 받지 않는다');
   });
 
+  it('이번만 대신하던 것을 원래 담당자에게 되돌리면 "다시 맡아요"로 알린다', async () => {
+    const { owner, b, c, find, reassign } = await setup();
+    const living = await find('거실'); // 방장 담당
+    await reassign(living.taskId, { assigneeUserId: b.userId, scope: 'ONCE' }, c.token);
+    const back = await reassign(living.taskId, { assigneeUserId: owner.userId, scope: 'ONCE' }, c.token);
+    assert.equal(back.status, 200, JSON.stringify(back.body));
+
+    const forOwner = (await noticesOf(owner)).find((n) => n.title !== '청소 담당에서 빠졌어요');
+    assert.equal(forOwner.title, '청소 담당으로 돌아왔어요');
+    assert.ok(forOwner.body.includes('다시 맡게') && !forOwner.body.includes('대신'), forOwner.body);
+
+    const forB = (await noticesOf(b)).find((n) => n.title === '청소 담당에서 빠졌어요');
+    assert.ok(forB.body.includes('원래 담당자') && forB.body.includes(owner.nickname), forB.body);
+  });
+
   it('앞으로 계속 바꾸면 문구가 "앞으로"로 나온다', async () => {
     const { owner, b, find, reassign } = await setup();
     const kitchen = await find('주방'); // b 담당
