@@ -75,6 +75,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="유통기한" />
 
                         <TextView
@@ -113,6 +114,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="청소" />
 
                         <TextView
@@ -151,6 +153,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="일정" />
 
                         <TextView
@@ -189,6 +192,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="지출·정산" />
 
                         <TextView

@@ -200,7 +200,7 @@ class SearchFragment : Fragment() {
                 )
             }
             "SUPPLY" -> main.openTab(MainTabsActivity.TAB_WAREHOUSE)
-            else -> main.openTab(MainTabsActivity.TAB_CALENDAR)
+            else -> main.openCalendarAt(r.date)
         }
     }
 }

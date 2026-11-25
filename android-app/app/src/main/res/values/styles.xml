@@ -72,7 +72,8 @@
         <item name="android:textAllCaps">false</item>
         <item name="strokeColor">@color/rm_border</item>
         <item name="strokeWidth">1.5dp</item>
-        <item name="backgroundTint">@color/white</item>
+        <!-- 밝은 모드는 흰색, 어두운 모드는 카드색 -->
+        <item name="backgroundTint">@color/rm_card</item>
         <item name="cornerRadius">28dp</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -200,6 +201,12 @@
     <style name="Rm.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="colorPrimary">@color/rm_primary</item>
         <item name="colorSurface">@color/rm_card</item>
+        <!-- Material3 팝업 배경은 colorSurfaceContainerHigh를 쓴다(기본값은 연보라). -->
+        <item name="colorSurfaceContainerHigh">@color/rm_card</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <!-- 선택 목록(라디오 버튼) 색 -->
+        <item name="colorControlActivated">@color/rm_primary</item>
+        <item name="colorControlNormal">@color/rm_sub</item>
         <item name="colorOnSurface">@color/rm_title</item>
         <item name="colorOnSurfaceVariant">@color/rm_sub</item>
         <item name="shapeAppearance">@style/Rm.DialogShape</item>

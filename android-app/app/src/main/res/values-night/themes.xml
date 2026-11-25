@@ -1,6 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Base.Theme.Android_Project" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/rm_primary</item>
+        <!-- 스위치 동그라미 등 주황 위에 올라가는 색 (기본값은 진한 보라) -->
+        <item name="colorOnPrimary">@color/white</item>
         <item name="android:windowBackground">@color/rm_bg</item>
         <item name="android:statusBarColor">@color/rm_bg</item>
         <item name="android:navigationBarColor">@color/rm_bg</item>

@@ -59,6 +59,7 @@ function scheduleResult(s) {
     title: s.title,
     line1: `${s.visibility === 'PERSONAL' ? '내 개인 일정' : '공유 일정'}${s.authorNickname ? ` · ${s.authorNickname}님` : ''}`,
     line2: `${mdw(s.startAt)}${s.description ? ` · ${s.description}` : ''}`,
+    date: String(s.startAt).slice(0, 10), // 눌렀을 때 캘린더를 이 날짜로 연다
   };
 }
 
@@ -70,6 +71,7 @@ function cleaningResult(t) {
     title: t.areaName,
     line1: `청소 · ${who}`,
     line2: `${mdw(t.nextDueDate)} · ${repeatText(t.repeatType, t.repeatInterval)}`,
+    date: String(t.nextDueDate).slice(0, 10),
   };
 }
 

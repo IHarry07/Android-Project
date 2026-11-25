@@ -41,6 +41,15 @@ import java.util.Locale
  */
 class CalendarFragment : Fragment() {
 
+    companion object {
+        private const val ARG_DATE = "date"
+
+        /** 처음 열 때 고를 날짜(YYYY-MM-DD). null이면 오늘. */
+        fun withDate(date: String?) = CalendarFragment().apply {
+            if (date != null) arguments = Bundle().apply { putString(ARG_DATE, date) }
+        }
+    }
+
     private lateinit var repo: ScheduleRepository
     private lateinit var itemRepo: ItemRepository
     private lateinit var adapter: ScheduleAdapter
@@ -89,6 +98,12 @@ class CalendarFragment : Fragment() {
         tvScheduleCount = view.findViewById(R.id.tvScheduleCount)
         tvScheduleEmpty = view.findViewById(R.id.tvScheduleEmpty)
         gridContainer = view.findViewById(R.id.gridContainer)
+
+        // 검색 결과에서 왔다면 그 날짜를 연다.
+        arguments?.getString(ARG_DATE)?.let { runCatching { LocalDate.parse(it.take(10)) }.getOrNull() }?.let {
+            selected = it
+            month = YearMonth.from(it)
+        }
 
         buildWeekdayRow(view.findViewById(R.id.weekdayRow))
         buildGrid()

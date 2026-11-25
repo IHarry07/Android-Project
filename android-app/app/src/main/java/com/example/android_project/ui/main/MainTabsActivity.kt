@@ -33,6 +33,8 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
         const val TAB_CALENDAR = "CALENDAR"
         const val TAB_WAREHOUSE = "WAREHOUSE"
         const val TAB_HOME = "HOME"
+        private const val STATE_TAB = "state_tab"
+        private const val STATE_ROOM = "state_room"
     }
 
     private enum class Tab { CALENDAR, WAREHOUSE, HOME, SEARCH, PROFILE }
@@ -73,6 +75,15 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
 
         if (savedInstanceState == null) {
             select(tabFrom(intent) ?: Tab.HOME)
+        } else {
+            // 화면 모드·글자 크기 변경, 회전 등으로 화면이 다시 만들어졌다.
+            // 탭 화면은 그대로 복원되므로, 방 정보와 메뉴바 상태만 되살린다.
+            currentRoom = savedInstanceState.getString(STATE_ROOM)
+                ?.let { runCatching { com.google.gson.Gson().fromJson(it, Room::class.java) }.getOrNull() }
+            selected = savedInstanceState.getString(STATE_TAB)
+                ?.let { runCatching { Tab.valueOf(it) }.getOrNull() } ?: Tab.HOME
+            setNavVisible(currentRoom != null)
+            updateNavStyle()
         }
 
         // 앱이 꺼져 있어도 폰 알림창에 알림이 오도록 주기 확인을 시작한다.
@@ -104,6 +115,12 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_TAB, selected.name)
+        currentRoom?.let { outState.putString(STATE_ROOM, com.google.gson.Gson().toJson(it)) }
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
@@ -117,6 +134,11 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
             TAB_WAREHOUSE -> select(Tab.WAREHOUSE)
             TAB_HOME -> select(Tab.HOME)
         }
+    }
+
+    /** 검색 결과(일정·청소)를 눌렀을 때 캘린더를 그 날짜로 연다. 날짜가 없으면 오늘. */
+    fun openCalendarAt(date: String?) {
+        select(Tab.CALENDAR, CalendarFragment.withDate(date))
     }
 
     private fun tabFrom(intent: Intent?): Tab? = when (intent?.getStringExtra(EXTRA_TAB)) {
@@ -142,10 +164,10 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
         navDivider.visibility = state
     }
 
-    private fun select(tab: Tab) {
+    private fun select(tab: Tab, given: Fragment? = null) {
         selected = tab
 
-        val fragment: Fragment = when (tab) {
+        val fragment: Fragment = given ?: when (tab) {
             Tab.HOME -> HomeFragment()
             Tab.WAREHOUSE -> WarehouseFragment()
             Tab.CALENDAR -> CalendarFragment()

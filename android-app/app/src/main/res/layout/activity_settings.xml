@@ -96,6 +96,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="프로필 사진 공개" />
 
                         <TextView
@@ -127,6 +128,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="화면 모드" />
 
                     <TextView
@@ -157,6 +159,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="글자 크기" />
 
                     <TextView
@@ -196,6 +199,7 @@
                             style="@style/Rm.MenuLabel"
                             android:layout_width="wrap_content"
                             android:layout_weight="0"
+                            android:layout_marginStart="0dp"
                             android:text="반복 청소 날짜 계속 표시" />
 
                         <TextView
@@ -225,6 +229,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="이용약관" />
 
                     <ImageView
@@ -247,6 +252,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="개인정보 처리방침" />
 
                     <ImageView
@@ -268,6 +274,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="공지사항" />
 
                     <ImageView
@@ -287,6 +294,7 @@
 
                     <TextView
                         style="@style/Rm.MenuLabel"
+                        android:layout_marginStart="0dp"
                         android:text="앱 버전" />
 
                     <TextView
