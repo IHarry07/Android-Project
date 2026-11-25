@@ -3,7 +3,6 @@ package com.example.android_project.data
 import com.example.android_project.model.SignupRequest
 import com.example.android_project.model.LoginRequest
 import com.example.android_project.model.ResetPasswordRequest
-import com.example.android_project.model.VerifyIdentityRequest
 import com.google.gson.JsonObject
 import retrofit2.Response
 
@@ -24,13 +23,6 @@ class AuthRepository {
         request: LoginRequest
     ): Response<JsonObject> {
         return apiService.login(request)
-    }
-
-    // 비밀번호 찾기 1단계: 가입 정보 확인
-    suspend fun verifyIdentity(
-        request: VerifyIdentityRequest
-    ): Response<JsonObject> {
-        return apiService.verifyIdentity(request)
     }
 
     // 비밀번호 찾기(이메일): 인증번호 보내기 / 확인하기

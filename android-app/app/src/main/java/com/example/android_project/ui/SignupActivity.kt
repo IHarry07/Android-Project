@@ -26,7 +26,7 @@ class SignupActivity : com.example.android_project.ui.BaseActivity() {
     private lateinit var etName: EditText
     private lateinit var etNickname: EditText
     private lateinit var etPhone: EditText
-    private lateinit var etEmail: EditText
+    private lateinit var emailVerifier: EmailVerifier
     private lateinit var etAccount: EditText
     private lateinit var etBirthDate: EditText
     private lateinit var rgGender: RadioGroup
@@ -92,7 +92,7 @@ class SignupActivity : com.example.android_project.ui.BaseActivity() {
         etName = findViewById(R.id.etSignupName)
         etNickname = findViewById(R.id.etSignupNickname)
         etPhone = findViewById(R.id.etSignupPhone)
-        etEmail = findViewById(R.id.etSignupEmail)
+        emailVerifier = EmailVerifier(findViewById(R.id.emailVerify), lifecycleScope) { toast(it) }
         etAccount = findViewById(R.id.etSignupAccount)
         etBirthDate = findViewById(R.id.etSignupBirthDate)
         rgGender = findViewById(R.id.rgGender)
@@ -193,9 +193,12 @@ class SignupActivity : com.example.android_project.ui.BaseActivity() {
 
         return try {
             val date = LocalDate.parse(v)
-            if (date.isBefore(LocalDate.of(1900, 1, 1)) || date.isAfter(LocalDate.now())) {
-                "생년월일이 올바르지 않습니다."
-            } else null
+            when {
+                date.isBefore(LocalDate.of(1900, 1, 1)) || date.isAfter(LocalDate.now()) -> "생년월일이 올바르지 않습니다."
+                // 약관: 만 14세 미만은 가입할 수 없다. (생일이 지났는지까지 따진다)
+                date.plusYears(14).isAfter(LocalDate.now()) -> "만 14세 미만은 가입할 수 없어요."
+                else -> null
+            }
         } catch (e: DateTimeParseException) {
             "존재하지 않는 날짜입니다."
         }
@@ -298,8 +301,10 @@ class SignupActivity : com.example.android_project.ui.BaseActivity() {
         nameError(name)?.let { etName.error = it; return }
         nicknameError(nickname)?.let { etNickname.error = it; return }
         phoneError(phone)?.let { etPhone.error = it; return }
-        val email = etEmail.text.toString().trim()
-        com.example.android_project.util.InputRules.emailError(email)?.let { etEmail.error = it; return }
+        // 이메일은 필수이고, 인증번호 확인까지 끝나야 가입할 수 있다.
+        if (!emailVerifier.requireVerified()) return
+        val email = emailVerifier.verifiedEmail ?: return
+        val emailToken = emailVerifier.emailToken ?: return
         accountError(account)?.let { etAccount.error = it; return }
         birthDateError(birthDate)?.let { etBirthDate.error = it; return }
 
@@ -344,7 +349,8 @@ class SignupActivity : com.example.android_project.ui.BaseActivity() {
                         name = name,
                         nickname = nickname,
                         phone = phone,
-                        email = email.ifEmpty { null },
+                        email = email,
+                        emailToken = emailToken,
                         accountInfo = account,
                         birthDate = birthDate,
                         gender = gender,

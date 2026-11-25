@@ -38,6 +38,10 @@ module.exports = {
   inviteDefaultDays: 7,
   // 하루 한 번 만드는 알림(유통기한, 청소 당번)을 이 시각(시) 이후에 만든다. DB 서버 시계 기준
   notifyHour: 9,
+  // 로그인한 회원 한 명이 1분에 보낼 수 있는 요청 수 (도배 방지). 테스트에서는 쓰지 않는다.
+  userRateLimitPerMinute: Number(process.env.USER_RATE_LIMIT_PER_MINUTE || 120),
+  // 개발용: 메일 설정(SMTP)이 없을 때 인증번호를 서버 콘솔에 출력한다. 배포에서는 절대 켜지 않는다.
+  mailDevConsole: process.env.MAIL_DEV_CONSOLE === 'true',
   // 알림 스케줄러를 끄려면 DISABLE_SCHEDULER=true (테스트에서는 항상 꺼진다)
   schedulerEnabled: process.env.NODE_ENV !== 'test' && process.env.DISABLE_SCHEDULER !== 'true',
 };

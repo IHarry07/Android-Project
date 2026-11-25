@@ -124,24 +124,43 @@
                 android:maxLength="20"
                 android:maxLines="1" />
 
-            <!-- 이메일 (선택) -->
+            <!-- 이메일 (필수, 바꿀 때는 새 이메일 인증) -->
             <TextView
                 style="@style/Rm.Label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="이메일 (선택)" />
+                android:text="이메일" />
 
-            <EditText
-                android:id="@+id/etMyEmail"
-                style="@style/Rm.Input"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:hint="비밀번호를 잊었을 때 이메일로 찾을 수 있어요"
-                android:inputType="textEmailAddress"
-                android:maxLength="100"
-                android:maxLines="1" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvMyEmail"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textColor="@color/rm_title"
+                    android:textSize="16sp" />
+
+                <Button
+                    android:id="@+id/btnChangeEmail"
+                    style="@style/Rm.Button.Outline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:minWidth="0dp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:text="변경"
+                    android:textSize="13sp" />
+            </LinearLayout>
 
             <Button
                 android:id="@+id/btnSaveMyInfo"

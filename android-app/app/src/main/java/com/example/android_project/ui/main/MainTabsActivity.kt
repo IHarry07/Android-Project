@@ -81,31 +81,24 @@ class MainTabsActivity : com.example.android_project.ui.BaseActivity() {
         }
         PhoneNotifications.start(this)
 
-        // 이메일이 없는 회원에게는 로그인 뒤 한 번만 등록을 안내한다. (savedInstanceState 가 없을 때만)
-        if (savedInstanceState == null) promptEmailOnce()
+        // 이메일이 없는 회원은 이메일 등록 화면으로 보낸다. (비밀번호 찾기에 필요)
+        if (savedInstanceState == null) requireEmail()
     }
 
-    // 이메일이 없으면 한 번만 안내한다. 이미 안내한 계정에는 다시 보여주지 않는다.
-    private fun promptEmailOnce() {
+    // 이메일이 없는 회원은 비밀번호를 찾을 수 없으므로, 먼저 이메일을 등록(인증)해야 앱을 쓸 수 있다.
+    private fun requireEmail() {
         lifecycleScope.launch {
             try {
                 val response = com.example.android_project.data.UserRepository(this@MainTabsActivity).getMe() ?: return@launch
                 if (!response.isSuccessful) return@launch
                 val user = response.body()?.getAsJsonObject("user") ?: return@launch
                 val email = user.get("email")?.takeIf { it.isJsonPrimitive }?.asString
-                val userId = user.get("userId").asInt
-                val prefs = getSharedPreferences("roomade_prompts", MODE_PRIVATE)
-                if (!email.isNullOrEmpty() || prefs.getBoolean("email_prompt_$userId", false)) return@launch
-                prefs.edit().putBoolean("email_prompt_$userId", true).apply()
-
-                com.google.android.material.dialog.MaterialAlertDialogBuilder(this@MainTabsActivity)
-                    .setTitle("이메일을 등록해 보세요")
-                    .setMessage("이메일을 등록하면 비밀번호를 잊었을 때 이메일로 쉽게 찾을 수 있어요.\n나중에 [프로필 > 내 정보]에서도 등록할 수 있어요.")
-                    .setNegativeButton("나중에", null)
-                    .setPositiveButton("등록하기") { _, _ ->
-                        startActivity(Intent(this@MainTabsActivity, com.example.android_project.ui.profile.MyInfoActivity::class.java))
-                    }
-                    .show()
+                if (!email.isNullOrEmpty()) return@launch
+                startActivity(
+                    Intent(this@MainTabsActivity, com.example.android_project.ui.EmailVerifyActivity::class.java)
+                        .putExtra(com.example.android_project.ui.EmailVerifyActivity.EXTRA_MODE, com.example.android_project.ui.EmailVerifyActivity.MODE_REQUIRED)
+                )
+                finish()
             } catch (_: Exception) {
             }
         }

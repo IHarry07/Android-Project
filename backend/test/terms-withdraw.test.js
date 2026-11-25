@@ -25,7 +25,7 @@ describe('가입 약관 동의', () => {
   it('동의한 약관 버전과 시각이 기록된다', async () => {
     const u = await makeUser();
     const [[row]] = await pool.query('SELECT terms_version, terms_agreed_at, privacy_agreed_at FROM users WHERE user_id = ?', [u.userId]);
-    assert.equal(row.terms_version, '1.0');
+    assert.equal(row.terms_version, require('../src/services/authService').TERMS_VERSION);
     assert.ok(row.terms_agreed_at && row.privacy_agreed_at);
   });
 });

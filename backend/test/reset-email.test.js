@@ -100,7 +100,8 @@ describe('이메일로 비밀번호 찾기', () => {
   it('탈퇴한 회원은 인증번호를 받을 수 없다', async () => {
     const u = await makeUser({ email: 'gone@example.com' });
     await api('DELETE', '/api/users/me', { token: u.token, body: { password: 'password1' } });
+    mail.outbox.length = 0; // 탈퇴 완료 알림 메일은 빼고 본다
     await send(u.body.loginId, 'gone@example.com');
-    assert.equal(mail.outbox.length, 0);
+    assert.equal(mail.outbox.filter((m) => m.subject.includes('비밀번호 찾기')).length, 0);
   });
 });

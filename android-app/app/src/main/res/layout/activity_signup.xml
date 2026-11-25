@@ -155,7 +155,7 @@
             android:inputType="phone"
             android:maxLines="1" />
 
-        <!-- 이메일 (선택) -->
+        <!-- 이메일 (필수, 인증번호로 확인) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -173,29 +173,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:text="선택"
-                android:textColor="@color/rm_sub"
+                android:text="필수 · 인증"
+                android:textColor="@color/rm_primary"
                 android:textSize="13sp" />
         </LinearLayout>
 
-        <EditText
-            android:id="@+id/etSignupEmail"
-            style="@style/Rm.Input"
+        <include
+            android:id="@+id/emailVerify"
+            layout="@layout/view_email_verify"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:hint="example@email.com"
-            android:inputType="textEmailAddress"
-            android:maxLength="100"
-            android:maxLines="1" />
-
-        <TextView
-            style="@style/Rm.Helper"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="비밀번호를 잊었을 때 이메일로 찾을 수 있어요." />
-
+            android:layout_marginTop="10dp" />
         <!-- 계좌 -->
         <TextView
             style="@style/Rm.Label"

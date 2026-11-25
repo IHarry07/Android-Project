@@ -11,14 +11,28 @@ const config = require('../config/env');
 const outbox = [];
 let transporter;
 
-function isConfigured() {
-  if (config.isTest) return true;
+function hasSmtp() {
   return Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
+}
+
+/** 인증번호를 보낼 수 있는지: SMTP 설정이 있거나, 개발용 콘솔 출력(MAIL_DEV_CONSOLE=true)이 켜져 있을 때 */
+function isConfigured() {
+  return config.isTest || hasSmtp() || config.mailDevConsole;
+}
+
+/** 실제 메일 발송이 가능한지 (보안 알림 메일은 콘솔 출력으로 대신하지 않는다) */
+function canSend() {
+  return config.isTest || hasSmtp();
 }
 
 async function send({ to, subject, text }) {
   if (config.isTest) {
     outbox.push({ to, subject, text });
+    return;
+  }
+  if (!hasSmtp() && config.mailDevConsole) {
+    // 개발용: 메일 대신 서버 콘솔에 출력한다.
+    console.log(`[개발용 메일] 받는 사람: ${to}\n제목: ${subject}\n${text}\n`);
     return;
   }
   if (!transporter) {
@@ -37,4 +51,4 @@ async function send({ to, subject, text }) {
   });
 }
 
-module.exports = { isConfigured, send, outbox };
+module.exports = { isConfigured, canSend, send, outbox };

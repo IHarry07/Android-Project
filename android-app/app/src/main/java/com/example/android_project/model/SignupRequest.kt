@@ -6,8 +6,9 @@ data class SignupRequest(
     val name: String,
     val nickname: String,
     val phone: String,
-    // 선택. 비우면 보내지 않는다.
-    val email: String? = null,
+    // 필수. 인증번호로 확인한 이메일과, 그때 받은 이메일 확인 토큰
+    val email: String,
+    val emailToken: String,
     val accountInfo: String,
     val birthDate: String,
     val gender: String,

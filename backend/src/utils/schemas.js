@@ -29,8 +29,6 @@ const email = z
   .toLowerCase()
   .email('이메일 형식이 올바르지 않습니다.')
   .max(100, '이메일은 100자 이하여야 합니다.');
-const optionalEmail = z.preprocess((v) => (v === '' ? undefined : v), email.optional());
-const nullableEmail = z.preprocess((v) => (v === '' ? null : v), email.nullable().optional());
 
 const phone = z
   .string({ error: '전화번호를 입력해 주세요.' })
@@ -58,6 +56,18 @@ const birthDate = z
     return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
   }, '존재하지 않는 날짜입니다.')
   .refine((v) => v >= '1900-01-01' && v <= new Date().toISOString().slice(0, 10), '생년월일이 올바르지 않습니다.');
+
+/** 만 나이: 생일이 지났는지까지 따진다. (서버 날짜 기준) */
+function ageOn(birth, today = new Date()) {
+  const [y, m, d] = birth.split('-').map(Number);
+  const ty = today.getFullYear();
+  const tm = today.getMonth() + 1;
+  const td = today.getDate();
+  return ty - y - (tm < m || (tm === m && td < d) ? 1 : 0);
+}
+const MIN_SIGNUP_AGE = 14;
+
+const emailToken = z.string({ error: '이메일 인증을 먼저 해 주세요.' }).min(1, '이메일 인증을 먼저 해 주세요.').max(2000, '이메일 인증 정보가 올바르지 않습니다.');
 
 const gender = z.enum(['MALE', 'FEMALE', 'OTHER'], { error: '성별은 MALE, FEMALE, OTHER 중 하나여야 합니다.' });
 
@@ -340,23 +350,28 @@ const settleShare = z.object({ isSettled: z.boolean({ error: 'isSettled는 true 
 
 module.exports = {
   signup: z.object({
-    loginId, password, name, nickname, phone, email: optionalEmail, accountInfo, birthDate, gender,
+    // 이메일은 필수이고, 이메일 인증을 마친 확인 토큰(emailToken)이 있어야 한다. (비밀번호 찾기에 쓴다)
+    loginId, password, name, nickname, phone, email, emailToken, accountInfo, birthDate, gender,
     // 약관 제4조: 이용약관과 개인정보 수집·이용에 동의해야 가입할 수 있다.
     agreeTerms: z.literal(true, { error: '이용약관에 동의해 주세요.' }),
     agreePrivacy: z.literal(true, { error: '개인정보 수집·이용에 동의해 주세요.' }),
+  }).refine((v) => ageOn(v.birthDate) >= MIN_SIGNUP_AGE, {
+    // 약관: 만 14세 미만은 가입할 수 없다.
+    message: `만 ${MIN_SIGNUP_AGE}세 미만은 가입할 수 없어요.`,
+    path: ['birthDate'],
+  }),
+  // 이메일 인증번호 받기 / 확인 (가입, 이메일 변경)
+  sendEmailCode: z.object({ email }),
+  verifyEmailCode: z.object({
+    email,
+    code: z.string({ error: '인증번호를 입력해 주세요.' }).trim().regex(/^\d{6}$/, '인증번호는 숫자 6자리입니다.'),
   }),
   login: z.object({
     loginId: z.string({ error: '아이디를 입력해 주세요.' }).min(1, '아이디를 입력해 주세요.'),
     password: z.string({ error: '비밀번호를 입력해 주세요.' }).min(1, '비밀번호를 입력해 주세요.'),
     keepLogin: z.boolean().optional().default(false),
   }),
-  // 비밀번호 찾기 1단계: 가입 정보가 모두 맞으면 확인 토큰을 준다.
-  verifyIdentity: z.object({
-    loginId: z.string({ error: '아이디를 입력해 주세요.' }).trim().min(1, '아이디를 입력해 주세요.').max(50, '아이디를 확인해 주세요.'),
-    name,
-    phone,
-    birthDate,
-  }),
+
   // 비밀번호 찾기(이메일): 아이디와 이메일로 인증번호를 받고, 인증번호로 확인 토큰을 받는다.
   sendResetCode: z.object({
     loginId: z.string({ error: '아이디를 입력해 주세요.' }).trim().min(1, '아이디를 입력해 주세요.').max(50, '아이디를 확인해 주세요.'),
@@ -368,13 +383,13 @@ module.exports = {
   }),
   // 비밀번호 찾기 2단계: 확인 토큰으로 새 비밀번호를 정한다.
   resetPassword: z.object({
-    resetToken: z.string({ error: '확인 정보가 없습니다. 가입 정보를 다시 확인해 주세요.' }).min(1, '확인 정보가 없습니다. 가입 정보를 다시 확인해 주세요.').max(2000, '확인 정보가 올바르지 않습니다.'),
+    resetToken: z.string({ error: '확인 정보가 없습니다. 이메일 인증부터 다시 해 주세요.' }).min(1, '확인 정보가 없습니다. 이메일 인증부터 다시 해 주세요.').max(2000, '확인 정보가 올바르지 않습니다.'),
     newPassword: password,
   }),
   checkLoginId: z.object({ loginId }),
   checkNickname: z.object({ nickname }),
   updateMe: z
-    .object({ name: name.optional(), nickname: nickname.optional(), phone: phone.optional(), email: nullableEmail })
+    .object({ name: name.optional(), nickname: nickname.optional(), phone: phone.optional(), email: email.optional(), emailToken: emailToken.optional() })
     .refine((v) => Object.keys(v).length > 0, '수정할 항목이 없습니다.'),
   changePassword: z.object({
     currentPassword: z.string({ error: '현재 비밀번호를 입력해 주세요.' }).min(1, '현재 비밀번호를 입력해 주세요.'),

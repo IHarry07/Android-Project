@@ -12,9 +12,10 @@ async function updateMe(req, res) {
 
 /** 비밀번호가 바뀌면 이전 토큰이 모두 무효가 되므로, 지금 쓰던 기기를 위해 새 토큰을 내려준다. */
 async function changePassword(req, res) {
-  const { userId, keep } = req.auth;
+  const { userId, keep, sid } = req.auth;
   const passwordHash = await userService.changePassword(userId, req.body.currentPassword, req.body.newPassword);
-  const token = signToken({ userId, keep, passwordHash });
+  // 지금 쓰는 기기는 같은 세션 번호로 새 토큰을 받는다. (다른 기기는 비밀번호가 바뀌어 로그인이 풀린다)
+  const token = signToken({ userId, keep, passwordHash, sid });
   res.json({
     message: '비밀번호가 변경되었습니다. 다른 기기의 로그인은 모두 해제됩니다.',
     token,

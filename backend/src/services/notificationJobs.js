@@ -127,6 +127,10 @@ async function scheduleNotifications() {
 /** 오래된 알림 정리 */
 async function purgeOld() {
   const [result] = await pool.query('DELETE FROM notifications WHERE created_at < DATE_SUB(NOW(), INTERVAL 90 DAY)');
+  // 다 쓴 보안 기록도 정리한다: 만료된 인증번호, 기간이 지난 로그아웃 세션 기록
+  await pool.query('DELETE FROM email_verifications WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
+  await pool.query('DELETE FROM password_reset_codes WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)');
+  await pool.query('DELETE FROM revoked_sessions WHERE expires_at < NOW()');
   return result.affectedRows;
 }
 

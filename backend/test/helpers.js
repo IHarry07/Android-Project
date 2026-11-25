@@ -7,6 +7,7 @@ const assert = require('node:assert/strict');
 const env = require('../src/config/env');
 const { pool } = require('../src/config/db');
 const app = require('../src/app');
+const { signEmailToken } = require('../src/services/tokenService');
 
 if (!env.db.database.endsWith('_test')) {
   throw new Error('테스트는 이름이 _test로 끝나는 DB에서만 실행할 수 있습니다.');
@@ -39,10 +40,16 @@ async function apiBinary(method, path, { data, token, contentType = 'image/jpeg'
 
 let seq = 0;
 
+/** 테스트용 이메일 확인 토큰 (실제로는 인증번호를 확인해야 받는다) */
+function emailTokenFor(email) {
+  return signEmailToken(String(email).trim().toLowerCase());
+}
+
 function newUserBody(overrides = {}) {
   seq += 1;
-  return {
+  const body = {
     loginId: `user${seq}`,
+    email: `user${seq}@test.example`,
     password: 'password1',
     name: `사용자${seq}`,
     nickname: `닉네임${seq}`,
@@ -54,6 +61,9 @@ function newUserBody(overrides = {}) {
     agreePrivacy: true,
     ...overrides,
   };
+  // 이메일 확인 토큰을 따로 정하지 않았다면 그 이메일로 인증을 마친 것으로 만든다.
+  if (!('emailToken' in overrides)) body.emailToken = emailTokenFor(body.email);
+  return body;
 }
 
 /** 회원가입 + 로그인까지 하고 { token, userId, body, login } 을 돌려준다. */
@@ -85,7 +95,7 @@ async function makeRoom(memberCount = 3, capacity = 10) {
 
 async function clearTables() {
   await pool.query('SET FOREIGN_KEY_CHECKS = 0');
-  for (const t of ['password_reset_codes', 'inquiries', 'room_memos', 'notices', 'user_photos', 'user_notification_settings', 'device_tokens', 'notifications', 'room_departures', 'expense_shares', 'expenses', 'cleaning_records',
+  for (const t of ['revoked_sessions', 'email_verifications', 'password_reset_codes', 'inquiries', 'room_memos', 'notices', 'user_photos', 'user_notification_settings', 'device_tokens', 'notifications', 'room_departures', 'expense_shares', 'expenses', 'cleaning_records',
     'cleaning_assignee_changes', 'cleaning_rotation', 'cleaning_tasks', 'schedules',
     'items', 'room_invitations', 'room_members', 'rooms', 'users']) {
     await pool.query(`TRUNCATE TABLE ${t}`);
@@ -112,4 +122,4 @@ async function dbToday() {
   return rows[0].d;
 }
 
-module.exports = { api, apiBinary, makeUser, makeRoom, newUserBody, startServer, stopServer, dbToday, pool, env };
+module.exports = { emailTokenFor, api, apiBinary, makeUser, makeRoom, newUserBody, startServer, stopServer, dbToday, pool, env };

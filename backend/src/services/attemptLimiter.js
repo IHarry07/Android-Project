@@ -26,7 +26,7 @@ function recordFailure(key) {
   const entry = failures.get(key);
   if (active(entry)) {
     entry.count += 1;
-    return;
+    return entry.count;
   }
   // 오래된 기록이 너무 쌓이지 않게 가끔 정리한다.
   if (failures.size >= MAX_ENTRIES) {
@@ -34,6 +34,7 @@ function recordFailure(key) {
     if (failures.size >= MAX_ENTRIES) failures.clear();
   }
   failures.set(key, { count: 1, firstAt: Date.now() });
+  return 1;
 }
 
 function clear(key) {

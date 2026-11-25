@@ -1,13 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
--->
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 안드로이드 11 이하의 자동 백업 규칙 (지금 앱은 안드로이드 15 이상이라 참고용) -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+        <!-- 로그인 정보와 푸시·알림 기기 정보는 백업·기기 이전에서 뺀다. (새 폰에서는 다시 로그인) -->
+        <exclude domain="sharedpref" path="roomade_token.xml" />
+        <exclude domain="sharedpref" path="roomade_push.xml" />
+        <exclude domain="sharedpref" path="roomade_notification.xml" />
+        <exclude domain="sharedpref" path="roomade_prompts.xml" />
 </full-backup-content>

@@ -123,7 +123,7 @@ class LoginActivity : com.example.android_project.ui.BaseActivity() {
 
         // 비밀번호 찾기
         findViewById<TextView>(R.id.tvForgotPassword).setOnClickListener {
-            startActivity(Intent(this, ResetMethodActivity::class.java))
+            startActivity(Intent(this, ResetByEmailActivity::class.java))
         }
     }
 

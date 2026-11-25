@@ -47,8 +47,9 @@ data class UpdateMeRequest(
     val name: String? = null,
     val nickname: String? = null,
     val phone: String? = null,
-    // 이메일을 지우려면 빈 문자열("")을 보낸다.
-    val email: String? = null
+    // 이메일을 바꿀 때는 새 이메일로 인증하고 받은 확인 토큰을 같이 보낸다. (이메일은 지울 수 없다)
+    val email: String? = null,
+    val emailToken: String? = null
 )
 
 data class ChangePasswordRequest(

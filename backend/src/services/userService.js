@@ -2,6 +2,8 @@ const bcrypt = require('bcryptjs');
 const { pool } = require('../config/db');
 const { AppError, duplicateKey } = require('../utils/errors');
 const departure = require('./departureService');
+const securityMail = require('./securityMail');
+const { verifyEmailToken } = require('./tokenService');
 const { encryptAccount, decryptAccount, maskAccount } = require('../utils/crypto');
 
 /** users 테이블의 UNIQUE 위반을 알아보기 쉬운 오류로 바꾼다. */
@@ -57,9 +59,10 @@ async function setPhotoPublic(userId, isPublic) {
  *    행은 기록용으로만 남긴다. 다른 회원과 함께 쓰던 지출·청소 이력에는 "탈퇴한 회원"으로 보인다.
  */
 async function withdraw(userId, password, sharedItems) {
-  const [rows] = await pool.query('SELECT password_hash FROM users WHERE user_id = ? AND withdrawn_at IS NULL', [userId]);
+  const [rows] = await pool.query('SELECT password_hash, email FROM users WHERE user_id = ? AND withdrawn_at IS NULL', [userId]);
   const ok = rows[0] && (await bcrypt.compare(password, rows[0].password_hash));
   if (!ok) throw new AppError(403, 'INVALID_PASSWORD', '비밀번호가 올바르지 않습니다.');
+  const emailBefore = rows[0].email;
 
   const conn = await pool.getConnection();
   try {
@@ -105,8 +108,11 @@ async function withdraw(userId, password, sharedItems) {
     await conn.query('DELETE FROM user_notification_settings WHERE user_id = ?', [userId]);
     await conn.query('DELETE FROM notifications WHERE user_id = ?', [userId]);
     await conn.query('DELETE FROM inquiries WHERE user_id = ?', [userId]);
+    if (emailBefore) await conn.query('DELETE FROM email_verifications WHERE email = ?', [emailBefore]);
 
     await conn.commit();
+    // 탈퇴가 끝나면 지우기 전 이메일로 완료를 알린다.
+    securityMail.withdrawn(emailBefore);
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -170,14 +176,28 @@ async function getMe(userId) {
 async function updateMe(userId, fields) {
   const columns = [];
   const values = [];
+  let oldEmail = null;
+  if (fields.email !== undefined) {
+    // 이메일을 바꾸려면 새 이메일로 인증을 마친 확인 토큰이 있어야 한다. (지우는 것은 안 된다: 필수 항목)
+    if (verifyEmailToken(fields.emailToken) !== fields.email) {
+      throw new AppError(400, 'EMAIL_NOT_VERIFIED', '새 이메일로 인증을 먼저 해 주세요. (인증은 30분 동안 유효해요)');
+    }
+    const [[me]] = await pool.query('SELECT email FROM users WHERE user_id = ?', [userId]);
+    oldEmail = me ? me.email : null;
+  }
   if (fields.name !== undefined) { columns.push('name = ?'); values.push(fields.name); }
   if (fields.nickname !== undefined) { columns.push('nickname = ?'); values.push(fields.nickname); }
   if (fields.phone !== undefined) { columns.push('phone = ?'); values.push(fields.phone); }
   if (fields.email !== undefined) { columns.push('email = ?'); values.push(fields.email); }
+  if (columns.length === 0) throw new AppError(400, 'VALIDATION_ERROR', '수정할 항목이 없습니다.');
   try {
     await pool.query(`UPDATE users SET ${columns.join(', ')} WHERE user_id = ?`, [...values, userId]);
   } catch (err) {
     throw mapUserDuplicate(err);
+  }
+  // 이메일이 바뀌면 이전 주소로 알린다. (계정을 빼앗기는 것을 알아챌 수 있게)
+  if (oldEmail && fields.email !== undefined && oldEmail !== fields.email) {
+    securityMail.emailChanged(oldEmail, fields.email);
   }
   return getMe(userId);
 }
@@ -196,6 +216,8 @@ async function changePassword(userId, currentPassword, newPassword) {
   }
   const passwordHash = await bcrypt.hash(newPassword, 10);
   await pool.query('UPDATE users SET password_hash = ? WHERE user_id = ?', [passwordHash, userId]);
+  const [[me]] = await pool.query('SELECT email FROM users WHERE user_id = ?', [userId]);
+  securityMail.passwordChanged(me && me.email);
   return passwordHash;
 }
 

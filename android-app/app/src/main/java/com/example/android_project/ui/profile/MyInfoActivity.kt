@@ -29,7 +29,7 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
     private lateinit var etName: EditText
     private lateinit var etNickname: EditText
     private lateinit var etPhone: EditText
-    private lateinit var etEmail: EditText
+    private lateinit var tvEmail: TextView
     private lateinit var tvBirthGender: TextView
     private lateinit var tvAccount: TextView
     private lateinit var btnSave: Button
@@ -47,7 +47,15 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
         etName = findViewById(R.id.etMyName)
         etNickname = findViewById(R.id.etMyNickname)
         etPhone = findViewById(R.id.etMyPhone)
-        etEmail = findViewById(R.id.etMyEmail)
+        tvEmail = findViewById(R.id.tvMyEmail)
+        // 이메일은 새 이메일로 인증을 해야 바꿀 수 있어서 따로 화면을 연다.
+        findViewById<Button>(R.id.btnChangeEmail).setOnClickListener {
+            startActivity(
+                android.content.Intent(this, com.example.android_project.ui.EmailVerifyActivity::class.java)
+                    .putExtra(com.example.android_project.ui.EmailVerifyActivity.EXTRA_MODE, com.example.android_project.ui.EmailVerifyActivity.MODE_CHANGE)
+                    .putExtra(com.example.android_project.ui.EmailVerifyActivity.EXTRA_CURRENT_EMAIL, user?.email.orEmpty())
+            )
+        }
         tvBirthGender = findViewById(R.id.tvBirthGender)
         tvAccount = findViewById(R.id.tvAccount)
         btnSave = findViewById(R.id.btnSaveMyInfo)
@@ -58,6 +66,12 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
         findViewById<Button>(R.id.btnChangeAccount).setOnClickListener { showAccountDialog() }
 
         load()
+    }
+
+    // 이메일 변경 화면에서 돌아오면 바뀐 이메일이 보이도록 다시 불러온다.
+    override fun onResume() {
+        super.onResume()
+        if (user != null) load()
     }
 
     private fun load() {
@@ -85,7 +99,7 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
         etName.setText(u.name)
         etNickname.setText(u.nickname)
         etPhone.setText(u.phone)
-        etEmail.setText(u.email.orEmpty())
+        tvEmail.text = u.email ?: "등록된 이메일이 없어요"
         tvBirthGender.text = "${u.birthDate?.take(10) ?: "-"}  ·  ${u.genderText()}"
         tvAccount.text = u.accountMasked ?: "-"
     }
@@ -101,8 +115,7 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
         InputRules.nameError(name)?.let { etName.error = it; return }
         InputRules.nicknameError(nickname)?.let { etNickname.error = it; return }
         InputRules.phoneError(phone)?.let { etPhone.error = it; return }
-        val email = etEmail.text.toString().trim().lowercase()
-        InputRules.emailError(email)?.let { etEmail.error = it; return }
+
 
         // 전화번호는 숫자만 비교한다. (010-1234-5678 과 01012345678 은 같은 번호)
         val phoneChanged = phone.filter { it.isDigit() } != current.phone.filter { it.isDigit() }
@@ -110,12 +123,10 @@ class MyInfoActivity : com.example.android_project.ui.BaseActivity() {
         val request = UpdateMeRequest(
             name = name.takeIf { it != current.name },
             nickname = nickname.takeIf { it != current.nickname },
-            phone = phone.takeIf { phoneChanged },
-            // 이메일을 지우면 빈 문자열을 보내 서버에서 지운다.
-            email = email.takeIf { it != current.email.orEmpty() }
+            phone = phone.takeIf { phoneChanged }
         )
 
-        if (request.name == null && request.nickname == null && request.phone == null && request.email == null) {
+        if (request.name == null && request.nickname == null && request.phone == null) {
             toast("바뀐 내용이 없어요.")
             return
         }

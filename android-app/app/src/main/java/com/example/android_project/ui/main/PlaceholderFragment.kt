@@ -50,10 +50,8 @@ class PlaceholderFragment : Fragment() {
         com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
             .setMessage("로그아웃할까요?")
             .setPositiveButton("로그아웃") { _, _ ->
-                TokenManager(requireContext()).clearToken()
-                val intent = Intent(requireContext(), LoginActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-                startActivity(intent)
+                // 서버에서도 이 로그인을 바로 무효화한다.
+                com.example.android_project.util.Session.logout(requireContext())
             }
             .setNegativeButton("취소", null)
             .show()

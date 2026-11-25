@@ -40,8 +40,9 @@
             android:name=".ui.TermsActivity"
             android:exported="false" />
         <activity
-            android:name=".ui.ResetMethodActivity"
-            android:exported="false" />
+            android:name=".ui.EmailVerifyActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".ui.ResetByEmailActivity"
             android:exported="false"

@@ -1,58 +1,10 @@
-// 이메일(선택)과 고객센터 문의
+// 고객센터 문의 (이메일 관련 테스트는 security.test.js)
 const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { api, makeUser, newUserBody, startServer, stopServer, pool } = require('./helpers');
 
 before(startServer);
 after(stopServer);
-
-describe('이메일', () => {
-  it('이메일 없이도 가입할 수 있고, 있으면 소문자로 저장된다', async () => {
-    const none = await makeUser();
-    const me = (await api('GET', '/api/users/me', { token: none.token })).body.user;
-    assert.equal(me.email, null);
-
-    const withMail = await makeUser({ email: 'Hello.World@Example.COM' });
-    const me2 = (await api('GET', '/api/users/me', { token: withMail.token })).body.user;
-    assert.equal(me2.email, 'hello.world@example.com');
-  });
-
-  it('빈 문자열은 없는 것으로 본다', async () => {
-    const u = await makeUser({ email: '' });
-    assert.equal((await api('GET', '/api/users/me', { token: u.token })).body.user.email, null);
-  });
-
-  it('형식이 틀리면 400, 이미 쓰는 이메일이면 409', async () => {
-    const bad = await api('POST', '/api/auth/signup', { body: { ...newUserBody(), email: 'not-an-email' } });
-    assert.equal(bad.status, 400);
-    const first = await makeUser({ email: 'dup@example.com' });
-    assert.ok(first);
-    const dup = await api('POST', '/api/auth/signup', { body: { ...newUserBody(), email: 'DUP@example.com' } });
-    assert.equal(dup.status, 409);
-    assert.equal(dup.body.error.code, 'EMAIL_TAKEN');
-  });
-
-  it('내 정보에서 등록·변경·삭제할 수 있다', async () => {
-    const u = await makeUser();
-    const set = await api('PATCH', '/api/users/me', { token: u.token, body: { email: 'mine@example.com' } });
-    assert.equal(set.status, 200, JSON.stringify(set.body));
-    assert.equal(set.body.user.email, 'mine@example.com');
-    const other = await makeUser();
-    const taken = await api('PATCH', '/api/users/me', { token: other.token, body: { email: 'mine@example.com' } });
-    assert.equal(taken.status, 409);
-    const clear = await api('PATCH', '/api/users/me', { token: u.token, body: { email: '' } });
-    assert.equal(clear.body.user.email, null);
-    const free = await api('PATCH', '/api/users/me', { token: other.token, body: { email: 'mine@example.com' } });
-    assert.equal(free.status, 200, '지운 이메일은 다른 회원이 쓸 수 있다');
-  });
-
-  it('탈퇴하면 이메일이 지워져 다시 쓸 수 있다', async () => {
-    const u = await makeUser({ email: 'leave@example.com' });
-    assert.equal((await api('DELETE', '/api/users/me', { token: u.token, body: { password: 'password1' } })).status, 200);
-    const again = await api('POST', '/api/auth/signup', { body: { ...newUserBody(), email: 'leave@example.com' } });
-    assert.equal(again.status, 201, JSON.stringify(again.body));
-  });
-});
 
 describe('고객센터 문의', () => {
   it('문의를 남기고 내 문의 목록과 상세를 본다 (처음엔 답변 대기)', async () => {

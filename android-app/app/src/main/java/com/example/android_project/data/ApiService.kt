@@ -3,12 +3,12 @@ package com.example.android_project.data
 import com.example.android_project.model.SignupRequest
 import com.example.android_project.model.LoginRequest
 import com.example.android_project.model.ResetPasswordRequest
-import com.example.android_project.model.VerifyIdentityRequest
 
 import com.google.gson.JsonObject
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.POST
 import retrofit2.http.Query
 
@@ -28,10 +28,25 @@ interface ApiService {
     ): Response<JsonObject>
 
 
-    // 비밀번호 찾기 1단계: 가입 정보 확인 ({"resetToken": "...", "expiresInSeconds": 600})
-    @POST("api/auth/reset-password/verify")
-    suspend fun verifyIdentity(
-        @Body request: VerifyIdentityRequest
+    // 이메일 인증번호 받기 (가입, 이메일 변경). 로그인한 상태면 Authorization 을 같이 보낸다.
+    @POST("api/auth/email/send")
+    suspend fun sendEmailCode(
+        @Header("Authorization") token: String?,
+        @Body body: JsonObject
+    ): Response<JsonObject>
+
+
+    // 이메일 인증번호 확인 ({"emailToken": "...", "expiresInSeconds": 1800})
+    @POST("api/auth/email/verify")
+    suspend fun verifyEmailCode(
+        @Body body: JsonObject
+    ): Response<JsonObject>
+
+
+    // 로그아웃: 이 로그인을 서버에서 바로 무효화한다.
+    @POST("api/auth/logout")
+    suspend fun logout(
+        @Header("Authorization") token: String
     ): Response<JsonObject>
 
 

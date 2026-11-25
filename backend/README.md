@@ -185,6 +185,20 @@ npm test
 
 다음 예정일은 지금 예정일에 주기를 더하되, 오늘 이후가 될 때까지 반복해서 더한다. 늦게 완료해도 이미 지난 날짜가 예정일이 되지 않는다. 담당자 대신 다른 사람이 청소하면 이력에 담당자와 실제 완료자가 따로 남는다.
 
+### 보안 작업 (2026-11-26)
+| 메서드 | 경로 | 설명 |
+|---|---|---|
+| POST | `/api/auth/email/send` | `{ email }`. 가입·이메일 변경용 6자리 인증번호를 보낸다(10분 유효). 이미 다른 회원이 쓰는 이메일이면 409 `EMAIL_TAKEN`, 60초 안에 다시 요청하면 429 `EMAIL_COOLDOWN`, IP당 15분 10회. 로그인한 상태로 부르면 자기 이메일로도 받을 수 있다. |
+| POST | `/api/auth/email/verify` | `{ email, code }`. 맞으면 30분짜리 `emailToken`. 5번 틀리면 그 번호는 무효. |
+| POST | `/api/auth/signup` | **`email`과 `emailToken`이 필수**(토큰의 이메일과 같아야 한다, 아니면 400 `EMAIL_NOT_VERIFIED`). 만 14세 미만이면 400. 약관 버전 1.1. |
+| PATCH | `/api/users/me` | 이메일을 바꾸려면 `{ email, emailToken }`. 지울 수 없다. 바뀌면 이전 주소로 알림 메일. |
+| POST | `/api/auth/login` | 같은 아이디로 5번 틀리면 15분 동안 429 `ACCOUNT_LOCKED`(맞는 비밀번호도), 잠길 때 이메일 알림. 없는 아이디도 똑같이 잠긴다. |
+| POST | `/api/auth/logout` | `Authorization`의 로그인(세션)을 서버에서 무효화한다. 갱신된 토큰도 같은 세션이라 함께 무효. 토큰이 없어도 200. |
+| 공통 | 로그인 필요한 API | 토큰에 세션 번호(`sid`)가 없거나 로그아웃한 세션이면 401 `TOKEN_INVALID`. 회원당 1분 120회를 넘으면 429 `TOO_MANY_REQUESTS`. |
+| GET | `/api/auth/check-login-id`, `/check-nickname` | IP당 15분 60회. |
+| (삭제) | `/api/auth/reset-password/verify` | 가입 정보로 비밀번호 찾기는 없앴다(404). 비밀번호는 이메일로만 찾는다. |
+
+보안 알림 메일: 비밀번호 변경·재설정, 이메일 변경(이전 주소), 회원 탈퇴 완료, 로그인 잠금. 메일 설정이 없으면 보내지 않는다. 개발할 때 `MAIL_DEV_CONSOLE=true`면 인증번호를 메일 대신 서버 콘솔에 찍는다.
 ### 비밀번호 찾기 (이메일 인증)
 | 메서드 | 경로 | 설명 |
 |---|---|---|
