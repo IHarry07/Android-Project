@@ -52,8 +52,10 @@ class EmailVerifier(
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                // 인증한 뒤 이메일을 바꾸면 다시 인증해야 한다.
-                if (verifiedEmail != null && current() != verifiedEmail) reset()
+                // 인증번호를 보낸 뒤(또는 인증한 뒤) 이메일을 바꾸면 처음부터 다시 한다.
+                // (안내 문구와 인증번호 칸이 이전 주소 것으로 남지 않게)
+                val sent = verifiedEmail ?: sentEmail
+                if (sent != null && current() != sent) reset()
             }
         })
     }
@@ -93,21 +95,29 @@ class EmailVerifier(
         InputRules.emailError(email)?.let { etEmail.error = it; return }
 
         btnSend.isEnabled = false
+        btnSend.text = "보내는 중…"
         scope.launch {
             try {
                 val body = JsonObject().apply { addProperty("email", email) }
+                // 연결이 끊겨 서버에 닿지 못한 경우의 재시도는 통신 라이브러리(OkHttp)가 알아서 한 번 한다.
+                // 여기서 또 보내면, 서버는 받았는데 응답만 늦은 경우 "60초 뒤에 다시"로 거절되어 실패처럼 보인다.
                 val response = RetrofitClient.apiService.sendEmailCode(authToken, body)
-                if (response.isSuccessful) {
+                val error = if (response.isSuccessful) null else ApiError.parse(response, "인증번호를 보내지 못했어요.")
+                if (response.isSuccessful || error?.code == "EMAIL_COOLDOWN") {
+                    // 방금 보낸 인증번호가 있으면(60초 안에 다시 누른 경우) 그 번호를 쓰면 된다.
                     sentEmail = email
                     layoutCode.visibility = View.VISIBLE
                     btnSend.text = "다시 받기"
-                    tvStatus.text = "$email 로 인증번호를 보냈어요. 10분 안에 입력해 주세요. (스팸함도 확인)"
+                    tvStatus.text = if (error == null) "$email 로 인증번호를 보냈어요. 10분 안에 입력해 주세요. (스팸함도 확인)"
+                    else "$email 로 이미 인증번호를 보냈어요. 메일함(스팸함 포함)을 확인해 주세요. ${error.message}"
                     etCode.requestFocus()
                 } else {
-                    onMessage(ApiError.messageOf(response, "인증번호를 보내지 못했어요."))
+                    btnSend.text = if (sentEmail == null) "인증번호 받기" else "다시 받기"
+                    onMessage(error?.message ?: "인증번호를 보내지 못했어요.")
                 }
             } catch (e: Exception) {
-                onMessage("서버에 연결할 수 없어요.")
+                btnSend.text = if (sentEmail == null) "인증번호 받기" else "다시 받기"
+                onMessage("서버에 연결할 수 없어요. 와이파이를 확인하고 다시 눌러 주세요.")
             } finally {
                 if (verifiedEmail == null) btnSend.isEnabled = true
             }

@@ -2,6 +2,7 @@ package com.example.android_project.data
 
 import android.content.Context
 import com.example.android_project.BuildConfig
+import okhttp3.ConnectionPool
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -19,7 +20,11 @@ object RetrofitClient {
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            // 쉬는 연결은 30초 뒤 버린다. 서버는 65초까지 열어 두므로, 서버가 먼저 닫은 연결을 다시 쓰다가
+            // 첫 요청이 실패하는 일이 없다. 연결이 끊겨 실패하면 한 번 더 시도한다.
+            .connectionPool(ConnectionPool(5, 30, TimeUnit.SECONDS))
+            .retryOnConnectionFailure(true)
             .addInterceptor(AuthInterceptor(appContext))
             .build()
     }
